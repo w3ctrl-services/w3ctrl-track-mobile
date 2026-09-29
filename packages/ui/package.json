@@ -1,0 +1,1 @@
+{"main":"src/index.tsx","name":"@w3ctrl/ui","peerDependencies":{"react":"*","react-native":"*","react-native-webview":"*"},"private":true,"types":"src/index.tsx","version":"1.0.0"}
