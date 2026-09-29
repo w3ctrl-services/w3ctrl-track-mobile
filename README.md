@@ -15,7 +15,7 @@ Shared code lives in `packages/`:
 | `@w3ctrl/api` | Traccar REST client (port of web `src/lib/traccar.ts`): Bearer-token auth via `POST /api/session/token`, devices/positions/events/trips/geofences/notifications/users/commands, `/track/` ingest helper, 38-alarm label map, `knotsToKmh`, geofence circle helpers |
 | `@w3ctrl/theme` | Brand tokens ported from the web app (amber `#ff9900` signal colour, light + dark) |
 | `@w3ctrl/i18n` | English + Hindi strings (same convention as web: keys are English, `en` dict is empty) |
-| `@w3ctrl/ui` | Screen/Card/Button/Field/Badge/Segmented/EmptyState/LoadingView primitives, Lucide icons (no emojis), and `MapView` — MapLibre GL in a WebView with free CARTO tiles (no API keys) |
+| `@w3ctrl/ui` | Screen/Card/Button/Field/Badge/Segmented/EmptyState/LoadingView primitives, Lucide icons (no emojis), and `MapView` — MapLibre GL in a WebView with free OpenFreeMap tiles (no API keys) |
 
 ## Prerequisites
 

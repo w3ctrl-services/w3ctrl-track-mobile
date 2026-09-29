@@ -446,7 +446,7 @@ export function deviceColor(type: DeviceType): string {
 /* ------------------------------------------------------------------ map */
 
 /**
- * MapLibre GL map inside a WebView — free CARTO tiles, no API keys, the same
+ * MapLibre GL map inside a WebView — free OpenFreeMap tiles, no API keys, the same
  * tiles the web app uses. Markers, trip polylines and geofence circles are
  * rendered from props; taps report back via `onPress(lat, lng)`.
  */
@@ -487,7 +487,7 @@ function mapHtml(opts: {
 .mk.sel{width:34px;height:34px;border-width:4px}
 .lbl{background:rgba(18,16,13,.85);color:#fff;font:600 11px system-ui;padding:3px 8px;border-radius:999px;white-space:nowrap;transform:translateY(-32px)}</style>
 </head><body><div id="m"></div><script>
-var map=new maplibregl.Map({container:'m',style:'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',center:${center}||[77.2,28.6],zoom:${opts.zoom}});
+var map=new maplibregl.Map({container:'m',style:'https://tiles.openfreemap.org/styles/positron',center:${center}||[77.2,28.6],zoom:${opts.zoom}});
 map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
 var markers=${markers}, path=${path}, circles=${circles};
 var markerObjs={};
