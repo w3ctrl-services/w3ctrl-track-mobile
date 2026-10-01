@@ -1,1 +1,42 @@
-{"dependencies":{"@react-native-async-storage/async-storage":"^2.1.0","@react-navigation/bottom-tabs":"^7.2.0","@react-navigation/native":"^7.1.0","@react-navigation/native-stack":"^7.2.0","@tanstack/react-query":"^5.62.0","@w3ctrl/api":"*","@w3ctrl/i18n":"*","@w3ctrl/theme":"*","@w3ctrl/ui":"*","expo":"~54.0.0","expo-notifications":"~0.32.0","expo-secure-store":"~15.0.0","expo-status-bar":"~3.0.0","lucide-react-native":"^1.48.0","react":"19.1.0","react-native":"0.81.0","react-native-safe-area-context":"^5.2.0","react-native-screens":"~4.12.0","react-native-svg":"15.12.0","react-native-webview":"13.15.0","zustand":"^5.0.2"},"devDependencies":{"@types/react":"~19.1.0","babel-preset-expo":"~54.0.0","typescript":"~5.8.0"},"main":"index.js","name":"w3ctrl-track-customer","private":true,"scripts":{"android":"expo run:android","ios":"expo run:ios","start":"expo start","typecheck":"tsc --noEmit"},"version":"1.0.0"}
+{
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.1.0",
+    "@react-navigation/bottom-tabs": "^7.2.0",
+    "@react-navigation/native": "^7.1.0",
+    "@react-navigation/native-stack": "^7.2.0",
+    "@tanstack/react-query": "^5.62.0",
+    "@w3ctrl/api": "*",
+    "@w3ctrl/i18n": "*",
+    "@w3ctrl/theme": "*",
+    "@w3ctrl/ui": "*",
+    "expo": "~54.0.0",
+    "expo-background-fetch": "~14.0.9",
+    "expo-notifications": "~0.32.0",
+    "expo-secure-store": "~15.0.0",
+    "expo-status-bar": "~3.0.0",
+    "expo-task-manager": "~14.0.9",
+    "lucide-react-native": "^1.48.0",
+    "react": "19.1.0",
+    "react-native": "0.81.0",
+    "react-native-safe-area-context": "^5.2.0",
+    "react-native-screens": "~4.12.0",
+    "react-native-svg": "15.12.0",
+    "react-native-webview": "13.15.0",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "babel-preset-expo": "~54.0.0",
+    "typescript": "~5.8.0"
+  },
+  "main": "index.js",
+  "name": "w3ctrl-track-customer",
+  "private": true,
+  "scripts": {
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "start": "expo start",
+    "typecheck": "tsc --noEmit"
+  },
+  "version": "1.0.0"
+}

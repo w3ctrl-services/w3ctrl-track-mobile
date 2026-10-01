@@ -29,8 +29,9 @@ import {
 } from "../api/hooks";
 import { formatRelative } from "../utils/format";
 import type { MainTabParamList, TabNav } from "../navigation/types";
+import { SmartAlertsPanel } from "../components/SmartAlertsPanel";
 
-type AlertsTab = "feed" | "rules";
+type AlertsTab = "feed" | "smart" | "rules";
 
 function isSosEvent(e: TraccarEvent): boolean {
   return (
@@ -139,6 +140,7 @@ export default function AlertsScreen() {
         <Segmented<AlertsTab>
           options={[
             { value: "feed", label: t("Feed") },
+            { value: "smart", label: t("Smart alerts") },
             { value: "rules", label: t("Rules") },
           ]}
           value={tab}
@@ -172,6 +174,10 @@ export default function AlertsScreen() {
             )}
           />
         )
+      ) : tab === "smart" ? (
+        <View style={{ flex: 1, padding: 16, paddingBottom: 0 }}>
+          <SmartAlertsPanel />
+        </View>
       ) : (
         <Screen>
           <Button

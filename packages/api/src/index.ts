@@ -479,3 +479,28 @@ export const NOTIFICATION_TYPES = [
   { value: "overspeed", label: "Overspeed" },
   { value: "deviceOffline", label: "Device offline" },
 ] as const;
+
+/* Smart alerts (overstay / low battery) — client-evaluated rules. */
+export {
+  BATTERY_PRESETS_PCT,
+  OVERSTAY_PRESETS_MIN,
+  SMART_ALERT_KINDS,
+  batteryPercent,
+  blankState,
+  defaultRuleName,
+  deviceScopeLabel,
+  evaluateSmartAlerts,
+  isStopped,
+  isValidRule,
+  newRuleId,
+  parseRules,
+  pointInGeofence,
+  ruleSummary,
+  sanitizeRule,
+  type EvaluateArgs,
+  type EvaluateResult,
+  type SmartAlertHit,
+  type SmartAlertKind,
+  type SmartAlertRule,
+  type SmartEvalState,
+} from "./smart-alerts";

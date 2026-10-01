@@ -9,7 +9,7 @@ export type MainTabParamList = {
   Home: undefined;
   Map: undefined;
   Devices: { openAdd?: boolean } | undefined;
-  Alerts: { tab?: "feed" | "rules" } | undefined;
+  Alerts: { tab?: "feed" | "smart" | "rules" } | undefined;
   Settings: undefined;
 };
 
