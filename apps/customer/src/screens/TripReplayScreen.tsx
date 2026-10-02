@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, SafeAreaView, View } from "react-native";
-import { useRoute, type RouteProp } from "@react-navigation/native";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { Pause, Play } from "lucide-react-native";
 import {
+  AppHeader,
   Card,
   EmptyState,
   LoadingView,
   MapView,
+  Rise,
   Row,
   Txt,
   moveMapMarker,
@@ -18,7 +20,7 @@ import { useT } from "@w3ctrl/i18n";
 import { knotsToKmh } from "@w3ctrl/api";
 import { useDevices, usePositionHistory, useTrips } from "../api/hooks";
 import { formatDuration, formatKm } from "../utils/format";
-import type { RootStackParamList } from "../navigation/types";
+import type { RootNav, RootStackParamList } from "../navigation/types";
 
 /** Dependency-free scrub slider: drag across the track to seek. */
 function ScrubBar({
@@ -73,9 +75,24 @@ function ScrubBar({
   );
 }
 
+function TripStat({ label, value }: { label: string; value: string }) {
+  const p = useTheme();
+  return (
+    <View style={{ flex: 1, minWidth: "30%", alignItems: "center" }}>
+      <Txt variant="subtitle" style={{ fontWeight: "800" }}>
+        {value}
+      </Txt>
+      <Txt variant="caption" color={p.muted} style={{ marginTop: 3 }}>
+        {label}
+      </Txt>
+    </View>
+  );
+}
+
 export default function TripReplayScreen() {
   const p = useTheme();
   const t = useT();
+  const navigation = useNavigation<RootNav>();
   const route = useRoute<RouteProp<RootStackParamList, "TripReplay">>();
   const { deviceId, from, to, tripIndex } = route.params;
 
@@ -162,81 +179,98 @@ export default function TripReplayScreen() {
     hour: "2-digit",
     minute: "2-digit",
   });
+  const routeTitle = `${trip.startAddress ?? "?"} → ${trip.endAddress ?? "?"}`;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: p.paper }}>
-      <View style={{ padding: 16, paddingBottom: 8 }}>
-        <Card>
-          <Row style={{ gap: 16, flexWrap: "wrap" }}>
-            <Txt variant="small" color={p.muted}>
-              {t("Distance")}:{" "}
-              <Txt variant="small" color={p.ink} style={{ fontWeight: "700" }}>
-                {formatKm(trip.distance)} km
-              </Txt>
-            </Txt>
-            <Txt variant="small" color={p.muted}>
-              {t("Duration")}:{" "}
-              <Txt variant="small" color={p.ink} style={{ fontWeight: "700" }}>
-                {formatDuration(trip.duration, t)}
-              </Txt>
-            </Txt>
-            <Txt variant="small" color={p.muted}>
-              {t("Top speed")}:{" "}
-              <Txt variant="small" color={p.ink} style={{ fontWeight: "700" }}>
-                {Math.round(knotsToKmh(trip.maxSpeed))} km/h
-              </Txt>
-            </Txt>
-          </Row>
-        </Card>
-      </View>
+    <View style={{ flex: 1, backgroundColor: p.paper }}>
+      <AppHeader
+        title={t("Trip replay")}
+        subtitle={deviceName}
+        onBack={() => navigation.goBack()}
+      />
 
-      <View style={{ flex: 1, marginHorizontal: 16, borderRadius: 16, overflow: "hidden" }}>
+      <Rise delay={40}>
+        <View style={{ padding: 16, paddingBottom: 8 }}>
+          <Card>
+            <Txt variant="subtitle" numberOfLines={1}>
+              {routeTitle}
+            </Txt>
+            <Txt variant="caption" color={p.muted} style={{ marginTop: 3 }}>
+              {deviceName} ·{" "}
+              {new Date(trip.startTime).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Txt>
+            <Row style={{ marginTop: 12, flexWrap: "wrap", gap: 8 }}>
+              <TripStat label={t("Distance")} value={`${formatKm(trip.distance)} km`} />
+              <TripStat
+                label={t("Duration")}
+                value={formatDuration(trip.duration, t)}
+              />
+              <TripStat
+                label={t("Top speed")}
+                value={`${Math.round(knotsToKmh(trip.maxSpeed))} km/h`}
+              />
+            </Row>
+          </Card>
+        </View>
+      </Rise>
+
+      <Rise
+        delay={80}
+        style={{ flex: 1, marginHorizontal: 16, borderRadius: 16, overflow: "hidden" }}
+      >
         <MapView ref={mapRef} markers={markers} path={path} />
-      </View>
+      </Rise>
 
-      <View style={{ padding: 16 }}>
-        <Row style={{ gap: 12, alignItems: "center" }}>
-          <Pressable
-            onPress={() => {
-              if (index >= points.length - 1) setIndex(0);
-              setPlaying((v) => !v);
-            }}
-            accessibilityLabel={playing ? t("Pause") : t("Play")}
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: 26,
-              backgroundColor: p.brand,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {playing ? (
-              <Pause color="#12100d" size={24} />
-            ) : (
-              <Play color="#12100d" size={24} />
-            )}
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <ScrubBar
-              value={index}
-              max={points.length - 1}
-              onScrub={(v) => {
-                setPlaying(false);
-                setIndex(v);
-              }}
-            />
-          </View>
-        </Row>
-        <Row style={{ justifyContent: "space-between", marginTop: 4 }}>
-          <Txt variant="caption" color={p.muted}>
-            {curTime}
-          </Txt>
-          <Txt variant="caption" color={p.muted}>
-            {t("Speed")}: {Math.round(knotsToKmh(cur.speed))} km/h
-          </Txt>
-        </Row>
-      </View>
-    </SafeAreaView>
+      <Rise delay={80}>
+        <View style={{ padding: 16 }}>
+          <Card>
+            <Row style={{ gap: 12, alignItems: "center" }}>
+              <Pressable
+                onPress={() => {
+                  if (index >= points.length - 1) setIndex(0);
+                  setPlaying((v) => !v);
+                }}
+                accessibilityLabel={playing ? t("Pause") : t("Play")}
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 26,
+                  backgroundColor: p.brand,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {playing ? (
+                  <Pause color="#12100d" size={24} />
+                ) : (
+                  <Play color="#12100d" size={24} />
+                )}
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <ScrubBar
+                  value={index}
+                  max={points.length - 1}
+                  onScrub={(v) => {
+                    setPlaying(false);
+                    setIndex(v);
+                  }}
+                />
+              </View>
+            </Row>
+            <Row style={{ justifyContent: "space-between", marginTop: 4 }}>
+              <Txt variant="caption" color={p.muted}>
+                {curTime}
+              </Txt>
+              <Txt variant="caption" color={p.muted}>
+                {t("Speed")}: {Math.round(knotsToKmh(cur.speed))} km/h
+              </Txt>
+            </Row>
+          </Card>
+        </View>
+      </Rise>
+    </View>
   );
 }

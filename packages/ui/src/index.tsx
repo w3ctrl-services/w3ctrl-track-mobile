@@ -6,12 +6,15 @@ import React, {
   createContext,
   forwardRef,
   useContext,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -20,13 +23,14 @@ import {
   Text,
   TextInput,
   TextStyle,
-  useColorScheme,
   View,
   ViewStyle,
 } from "react-native";
 import { WebView } from "react-native-webview";
+import { SafeAreaView as InsetSafeAreaView } from "react-native-safe-area-context";
+import { ChevronLeft } from "lucide-react-native";
+import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import {
-  dark as darkPalette,
   light as lightPalette,
   Palette,
   radius,
@@ -44,12 +48,9 @@ const ThemeContext = createContext<{ mode: ThemeMode; p: Palette }>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const scheme = useColorScheme();
-  const mode: ThemeMode = scheme === "dark" ? "dark" : "light";
-  const value = useMemo(
-    () => ({ mode, p: mode === "dark" ? darkPalette : lightPalette }),
-    [mode],
-  );
+  // Design rule: the app is always light-themed, regardless of the OS setting.
+  const mode: ThemeMode = "light";
+  const value = useMemo(() => ({ mode, p: lightPalette }), []);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
@@ -190,21 +191,27 @@ export function Button({
   style?: ViewStyle;
 }) {
   const p = useTheme();
+  const isPrimary = kind === "primary";
   const styles: Record<ButtonKind, { bg: string; fg: string; border?: string }> = {
-    primary: { bg: p.brand, fg: "#12100d" },
+    primary: { bg: "#ff9900", fg: "#181200" },
     secondary: { bg: p.surface, fg: p.ink, border: p.lineStrong },
     danger: { bg: p.alert, fg: "#ffffff" },
     ghost: { bg: "transparent", fg: p.brandInk },
   };
   const s = styles[kind];
+  const content = loading ? (
+    <ActivityIndicator color={s.fg} size="small" />
+  ) : (
+    <Text style={{ color: s.fg, fontSize: 16, fontWeight: "600" }}>{title}</Text>
+  );
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
       style={({ pressed }) => [
         {
-          backgroundColor: s.bg,
-          borderRadius: radius.pill,
+          borderRadius: isPrimary ? radius.lg : radius.pill,
+          overflow: "hidden",
           paddingVertical: spacing.md,
           paddingHorizontal: spacing.xl,
           alignItems: "center",
@@ -212,17 +219,240 @@ export function Button({
           flexDirection: "row",
           gap: spacing.sm,
           opacity: disabled ? 0.45 : pressed ? 0.88 : 1,
+          ...(isPrimary ? {} : { backgroundColor: s.bg }),
           ...(s.border ? { borderWidth: 1, borderColor: s.border } : {}),
         },
         style,
       ]}
     >
-      {loading ? (
-        <ActivityIndicator color={s.fg} size="small" />
-      ) : (
-        <Text style={{ color: s.fg, fontSize: 16, fontWeight: "600" }}>{title}</Text>
-      )}
+      {isPrimary ? (
+        <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+          <Defs>
+            <LinearGradient id="w3btn" x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0" stopColor="#ff9900" />
+              <Stop offset="1" stopColor="#ff7a00" />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#w3btn)" />
+        </Svg>
+      ) : null}
+      {content}
     </Pressable>
+  );
+}
+
+/* --------------------------------------- brand (MageArgus reskin) */
+
+/**
+ * Black app header. Safe-area aware (top edge only); back chevron, title,
+ * optional subtitle and a right-side node; `children` renders below the row
+ * for custom header rows.
+ */
+export function AppHeader({
+  title,
+  subtitle,
+  onBack,
+  right,
+  children,
+  style,
+}: {
+  title: string;
+  subtitle?: string;
+  onBack?: () => void;
+  right?: React.ReactNode;
+  children?: React.ReactNode;
+  style?: ViewStyle;
+}) {
+  return (
+    <InsetSafeAreaView
+      edges={["top"]}
+      style={[{ backgroundColor: "#101014" }, style]}
+    >
+      <View style={{ paddingHorizontal: 18, paddingTop: 10, paddingBottom: 16 }}>
+        {title || onBack || right ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          {onBack ? (
+            <Pressable onPress={onBack} hitSlop={8} style={{ marginLeft: -6 }}>
+              <ChevronLeft color="#ffffff" size={24} />
+            </Pressable>
+          ) : null}
+          <View style={{ flex: 1 }}>
+            {title ? (
+            <Text style={{ fontSize: 20, fontWeight: "700", color: "#ffffff" }}>
+              {title}
+            </Text>
+            ) : null}
+            {subtitle ? (
+              <Text
+                style={{ fontSize: 12.5, color: "#b9b9c2", marginTop: 2 }}
+              >
+                {subtitle}
+              </Text>
+            ) : null}
+          </View>
+          {right ?? null}
+        </View>
+        ) : null}
+        {children}
+      </View>
+    </InsetSafeAreaView>
+  );
+}
+
+/* ------------------------------------------------------- ad slider */
+
+const PROMOS: { title: string; body: string; cta: string; from: string; to: string }[] = [
+  {
+    title: "Go Plus",
+    body: "Engine cut-off, email alerts & priority support.",
+    cta: "Upgrade ₹499/yr",
+    from: "#101014",
+    to: "#3a2b00",
+  },
+  {
+    title: "Refer & earn",
+    body: "Give ₹200, get ₹200 when a friend starts tracking.",
+    cta: "Invite",
+    from: "#7a2e00",
+    to: "#ff7a00",
+  },
+  {
+    title: "SOS pendant",
+    body: "One-press SOS for the family, pairs with the app.",
+    cta: "₹999",
+    from: "#0b3b2e",
+    to: "#12a37a",
+  },
+];
+
+/** Auto-rotating promo carousel: 3 gradient slides, 4s interval, dot indicators. */
+export function AdSlider({ style }: { style?: ViewStyle }) {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIdx((i) => (i + 1) % PROMOS.length), 4000);
+    return () => clearInterval(t);
+  }, []);
+  const slide = PROMOS[idx];
+  return (
+    <View style={style}>
+      <View
+        style={{
+          height: 120,
+          borderRadius: 22,
+          overflow: "hidden",
+          padding: 20,
+          justifyContent: "center",
+        }}
+      >
+        <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+          <Defs>
+            <LinearGradient id="w3ad" x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0" stopColor={slide.from} />
+              <Stop offset="1" stopColor={slide.to} />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#w3ad)" />
+        </Svg>
+        <View key={idx}>
+          <Text style={{ fontSize: 17, fontWeight: "700", color: "#ffffff" }}>
+            {slide.title}
+          </Text>
+          <Text
+            style={{
+              fontSize: 12.5,
+              color: "rgba(255,255,255,0.85)",
+              marginTop: 6,
+              maxWidth: 220,
+              lineHeight: 18,
+            }}
+          >
+            {slide.body}
+          </Text>
+          <View
+            style={{
+              alignSelf: "flex-start",
+              backgroundColor: "#ffffff",
+              borderRadius: 999,
+              paddingHorizontal: 18,
+              paddingVertical: 9,
+              marginTop: 12,
+            }}
+          >
+            <Text style={{ fontSize: 12.5, fontWeight: "700", color: "#101014" }}>
+              {slide.cta}
+            </Text>
+          </View>
+        </View>
+      </View>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "center",
+          gap: 6,
+          marginTop: 10,
+        }}
+      >
+        {PROMOS.map((_, i) => (
+          <View
+            key={i}
+            style={{
+              width: i === idx ? 22 : 6,
+              height: 6,
+              borderRadius: 99,
+              backgroundColor: i === idx ? "#ff9900" : "#c9c9d2",
+            }}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/* ------------------------------------------------------------------ rise */
+
+/**
+ * Mount entrance: fades in and rises 18px over 450ms (optional delay),
+ * runs once on mount with the native driver.
+ */
+export function Rise({
+  children,
+  delay = 0,
+  style,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  style?: ViewStyle;
+}) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const t = Animated.timing(anim, {
+      toValue: 1,
+      duration: 450,
+      delay,
+      useNativeDriver: true,
+    });
+    t.start();
+    return () => t.stop();
+  }, [anim, delay]);
+  return (
+    <Animated.View
+      style={[
+        {
+          opacity: anim,
+          transform: [
+            {
+              translateY: anim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [18, 0],
+              }),
+            },
+          ],
+        },
+        style,
+      ]}
+    >
+      {children}
+    </Animated.View>
   );
 }
 

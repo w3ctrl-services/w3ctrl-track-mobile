@@ -2,7 +2,7 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Bell, Home, Layers, Map as MapIcon, Settings } from "lucide-react-native";
-import { LoadingView, useTheme } from "@w3ctrl/ui";
+import { LoadingView } from "@w3ctrl/ui";
 import { useT } from "@w3ctrl/i18n";
 import { useAuth } from "../auth/AuthContext";
 import type { MainTabParamList, RootStackParamList } from "./types";
@@ -24,7 +24,6 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
-  const p = useTheme();
   const t = useT();
   const icon =
     (Icon: React.ComponentType<{ color: string; size: number }>) =>
@@ -35,9 +34,9 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: p.brand,
-        tabBarInactiveTintColor: p.muted,
-        tabBarStyle: { backgroundColor: p.surface, borderTopColor: p.line },
+        tabBarActiveTintColor: "#ff9900",
+        tabBarInactiveTintColor: "#8e8e99",
+        tabBarStyle: { backgroundColor: "#101014", borderTopWidth: 0 },
       }}
     >
       <Tab.Screen
@@ -71,70 +70,27 @@ function MainTabs() {
 
 export function RootNavigator() {
   const { user, restoring } = useAuth();
-  const p = useTheme();
-  const t = useT();
 
   if (restoring) {
     return <LoadingView text="W3ctrl Track" />;
   }
 
+  // Every screen renders its own AppHeader (with onBack where needed),
+  // so the native stack header stays off on all routes.
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: p.surface },
-        headerTintColor: p.ink,
-        headerTitleStyle: { fontWeight: "700" },
-        headerShadowVisible: false,
-      }}
-    >
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!user ? (
-        <Stack.Screen
-          name="Auth"
-          component={LoginScreen}
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="Auth" component={LoginScreen} />
       ) : (
         <>
-          <Stack.Screen
-            name="Main"
-            component={MainTabs}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="DeviceDetail"
-            component={DeviceDetailScreen}
-            options={{ title: t("Devices") }}
-          />
-          <Stack.Screen
-            name="TripReplay"
-            component={TripReplayScreen}
-            options={{ title: t("Replay") }}
-          />
-          <Stack.Screen
-            name="Geofences"
-            component={GeofencesScreen}
-            options={{ title: t("Geofences") }}
-          />
-          <Stack.Screen
-            name="GeofenceEdit"
-            component={GeofenceEditScreen}
-            options={{ title: t("New geofence") }}
-          />
-          <Stack.Screen
-            name="AlertRules"
-            component={AlertRulesScreen}
-            options={{ title: t("New rule") }}
-          />
-          <Stack.Screen
-            name="Reports"
-            component={ReportsScreen}
-            options={{ title: t("Reports") }}
-          />
-          <Stack.Screen
-            name="Admin"
-            component={AdminScreen}
-            options={{ title: t("Admin") }}
-          />
+          <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen name="DeviceDetail" component={DeviceDetailScreen} />
+          <Stack.Screen name="TripReplay" component={TripReplayScreen} />
+          <Stack.Screen name="Geofences" component={GeofencesScreen} />
+          <Stack.Screen name="GeofenceEdit" component={GeofenceEditScreen} />
+          <Stack.Screen name="AlertRules" component={AlertRulesScreen} />
+          <Stack.Screen name="Reports" component={ReportsScreen} />
+          <Stack.Screen name="Admin" component={AdminScreen} />
         </>
       )}
     </Stack.Navigator>

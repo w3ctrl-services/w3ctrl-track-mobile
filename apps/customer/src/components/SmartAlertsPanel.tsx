@@ -14,12 +14,19 @@ import {
 } from "react-native";
 import * as Notifications from "expo-notifications";
 import { useNavigation } from "@react-navigation/native";
-import { BellRing, Plus, Smartphone, Trash2 } from "lucide-react-native";
 import {
+  BatteryFull,
+  Smartphone,
+  Timer,
+  Trash2,
+} from "lucide-react-native";
+import {
+  AdSlider,
   Button,
   Card,
   DeviceDot,
   EmptyState,
+  Rise,
   Row,
   Segmented,
   Txt,
@@ -334,58 +341,133 @@ export function SmartAlertsPanel() {
     return dt === "phone" || dt === "laptop";
   }).length;
 
-  return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 }}>
-      <Card style={{ marginBottom: 12 }}>
-        <Row style={{ gap: 12 }}>
-          <BellRing size={20} color={p.brand} />
-          <Txt variant="body" style={{ flex: 1 }}>
-            {t("Overstay and low-battery checks run in this app while it is open, plus a background check about every 15 minutes. They are not 24/7 server watches.")}
-          </Txt>
-        </Row>
-        {notifState !== "granted" && (
-          <Button
-            title={t("Enable notifications")}
-            kind="secondary"
-            onPress={enableNotifications}
-            style={{ marginTop: 10 }}
-          />
-        )}
-      </Card>
+  const kicker = {
+    fontSize: 12,
+    fontWeight: "700" as const,
+    color: p.muted,
+    letterSpacing: 1.2,
+    marginBottom: 10,
+    marginLeft: 4,
+  };
 
-      {phoneLaptopCount > 0 && (
-        <Card style={{ marginBottom: 12 }}>
-          <Row style={{ gap: 8, marginBottom: 6 }}>
-            <Smartphone size={16} color={p.muted} />
-            <Txt variant="subtitle">
-              {t("Phones & laptops")} ({phoneLaptopCount})
-            </Txt>
-          </Row>
-          <Txt variant="small" color={p.muted} style={{ marginBottom: 10 }}>
-            {t("Pair smart alerts with server rules that fire even when this app is closed: Device offline (app killed / laptop asleep) and Alarm → SOS.")}
-          </Txt>
-          <Button
-            title={t("Add server rule")}
-            kind="secondary"
-            onPress={() => navigation.navigate("AlertRules")}
-          />
-        </Card>
+  return (
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ padding: 16, paddingTop: 8, paddingBottom: 32 }}
+    >
+      <Rise delay={0}>
+        <Txt style={kicker}>{t("Smart alert rules")}</Txt>
+      </Rise>
+
+      {rules.length === 0 && !showForm ? (
+        <EmptyState
+          title={t("No smart alerts yet")}
+          hint={t("Watch for overstays and low batteries without any server setup.")}
+        />
+      ) : (
+        rules.map((r, i) => {
+          const Icon = r.kind === "lowBattery" ? BatteryFull : Timer;
+          return (
+            <Rise key={r.id} delay={Math.min(i, 6) * 60}>
+              <Card style={{ marginBottom: 10 }}>
+                <Row style={{ justifyContent: "space-between" }}>
+                  <View
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 14,
+                      backgroundColor:
+                        r.kind === "lowBattery" ? p.alertSoft : p.brandSoft,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Icon
+                      size={20}
+                      color={
+                        r.kind === "lowBattery" ? p.alert : p.brandInk
+                      }
+                    />
+                  </View>
+                  <View style={{ flex: 1, paddingRight: 8 }}>
+                    <Txt variant="body" style={{ fontWeight: "600" }}>
+                      {r.name}
+                    </Txt>
+                    <Txt variant="small" color={p.muted} style={{ marginTop: 2 }}>
+                      {ruleSummary(r, geofenceName, t)} · {deviceScopeLabel(r, t)}
+                    </Txt>
+                  </View>
+                  <Switch
+                    value={r.enabled}
+                    onValueChange={() =>
+                      persist(rules.map((x) => (x.id === r.id ? { ...x, enabled: !x.enabled } : x)))
+                    }
+                    trackColor={{ true: p.brand, false: p.surface3 }}
+                  />
+                  <Pressable onPress={() => confirmDelete(r)} style={{ padding: 6 }}>
+                    <Trash2 size={17} color={p.muted} />
+                  </Pressable>
+                </Row>
+              </Card>
+            </Rise>
+          );
+        })
       )}
 
-      <Row style={{ justifyContent: "space-between", marginBottom: 8, marginTop: 4 }}>
-        <Txt variant="subtitle">{t("Smart alert rules")}</Txt>
-        {!showForm && (
-          <Pressable
-            onPress={() => setShowForm(true)}
-            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-          >
-            <Plus size={16} color={p.brand} />
-            <Txt color={p.brand}>{t("New")}</Txt>
-          </Pressable>
-        )}
-      </Row>
+      <Rise delay={120}>
+        <Row style={{ justifyContent: "space-between", marginBottom: 8, marginTop: 12 }}>
+          <Txt style={kicker}>{t("Recent")}</Txt>
+          {hits.length > 0 && (
+            <Pressable
+              onPress={() => {
+                void clearHits().then(() => refresh(user));
+              }}
+            >
+              <Txt variant="small" color={p.muted}>
+                {t("Clear")}
+              </Txt>
+            </Pressable>
+          )}
+        </Row>
+      </Rise>
+      {hits.length === 0 ? (
+        <EmptyState
+          title={t("Nothing fired yet")}
+          hint={t("When a rule fires, it shows up here.")}
+        />
+      ) : (
+        hits.slice(0, 20).map((h, i) => (
+          <Rise key={h.id} delay={Math.min(i, 6) * 60}>
+            <Card
+              style={{
+                marginBottom: 10,
+                borderLeftWidth: 4,
+                borderLeftColor: p.brand,
+              }}
+            >
+              <Row style={{ gap: 10 }}>
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: KIND_TONE[h.kind],
+                    marginTop: 6,
+                  }}
+                />
+                <View style={{ flex: 1 }}>
+                  <Txt variant="body">{h.message}</Txt>
+                  <Txt variant="small" color={p.muted} style={{ marginTop: 2 }}>
+                    {h.ruleName} · {formatRelative(h.at, t)}
+                  </Txt>
+                </View>
+              </Row>
+            </Card>
+          </Rise>
+        ))
+      )}
 
-      {showForm && (
+      {showForm ? (
         <NewRuleForm
           devices={devices ?? []}
           geofences={geofences ?? []}
@@ -394,82 +476,61 @@ export function SmartAlertsPanel() {
             void refresh(user);
           }}
         />
-      )}
-
-      {rules.length === 0 && !showForm ? (
-        <EmptyState
-          title={t("No smart alerts yet")}
-          hint={t("Watch for overstays and low batteries without any server setup.")}
-        />
       ) : (
-        rules.map((r) => (
-          <Card key={r.id} style={{ marginBottom: 10 }}>
-            <Row style={{ justifyContent: "space-between" }}>
-              <View style={{ flex: 1, paddingRight: 8 }}>
-                <Txt variant="body" style={{ fontWeight: "600" }}>
-                  {r.name}
-                </Txt>
-                <Txt variant="small" color={p.muted} style={{ marginTop: 2 }}>
-                  {ruleSummary(r, geofenceName, t)} · {deviceScopeLabel(r, t)}
-                </Txt>
-              </View>
-              <Switch
-                value={r.enabled}
-                onValueChange={() =>
-                  persist(rules.map((x) => (x.id === r.id ? { ...x, enabled: !x.enabled } : x)))
-                }
-                trackColor={{ true: p.brand, false: p.surface3 }}
-              />
-              <Pressable onPress={() => confirmDelete(r)} style={{ padding: 6 }}>
-                <Trash2 size={17} color={p.muted} />
-              </Pressable>
-            </Row>
-          </Card>
-        ))
+        <Rise delay={180}>
+          <Button
+            kind="ghost"
+            title={`+ ${t("New smart alert")}`}
+            onPress={() => setShowForm(true)}
+            style={{ marginTop: 8 }}
+          />
+        </Rise>
       )}
 
-      <Row style={{ justifyContent: "space-between", marginBottom: 8, marginTop: 12 }}>
-        <Txt variant="subtitle">{t("Recent smart alerts")}</Txt>
-        {hits.length > 0 && (
-          <Pressable
-            onPress={() => {
-              void clearHits().then(() => refresh(user));
-            }}
-          >
-            <Txt variant="small" color={p.muted}>
-              {t("Clear")}
+      {phoneLaptopCount > 0 && (
+        <Rise delay={200}>
+          <Card style={{ marginBottom: 12, marginTop: 12 }}>
+            <Row style={{ gap: 8, marginBottom: 6 }}>
+              <Smartphone size={16} color={p.muted} />
+              <Txt variant="subtitle">
+                {t("Phones & laptops")} ({phoneLaptopCount})
+              </Txt>
+            </Row>
+            <Txt variant="small" color={p.muted} style={{ marginBottom: 10 }}>
+              {t("Pair smart alerts with server rules that fire even when this app is closed: Device offline (app killed / laptop asleep) and Alarm → SOS.")}
             </Txt>
-          </Pressable>
-        )}
-      </Row>
-      {hits.length === 0 ? (
-        <EmptyState
-          title={t("Nothing fired yet")}
-          hint={t("When a rule fires, it shows up here.")}
-        />
-      ) : (
-        hits.slice(0, 20).map((h) => (
-          <Card key={h.id} style={{ marginBottom: 10 }}>
-            <Row style={{ gap: 10 }}>
-              <View
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: KIND_TONE[h.kind],
-                  marginTop: 6,
-                }}
-              />
-              <View style={{ flex: 1 }}>
-                <Txt variant="body">{h.message}</Txt>
-                <Txt variant="small" color={p.muted} style={{ marginTop: 2 }}>
-                  {h.ruleName} · {formatRelative(h.at, t)}
-                </Txt>
-              </View>
-            </Row>
+            <Button
+              title={t("Add server rule")}
+              kind="secondary"
+              onPress={() => navigation.navigate("AlertRules")}
+            />
           </Card>
-        ))
+        </Rise>
       )}
+
+      <Rise delay={220}>
+        <Txt
+          variant="small"
+          color={p.muted}
+          style={{ textAlign: "center", lineHeight: 20, marginTop: 10 }}
+        >
+          {t(
+            "Smart alerts check the live feed while the app is open — they are not 24/7 server watches.",
+          )}
+        </Txt>
+        {notifState !== "granted" && (
+          <Button
+            title={t("Enable notifications")}
+            kind="secondary"
+            onPress={enableNotifications}
+            style={{ marginTop: 10 }}
+          />
+        )}
+      </Rise>
+
+      <Rise delay={260} style={{ marginTop: 16 }}>
+        <AdSlider />
+      </Rise>
       <View style={{ height: 8 }} />
     </ScrollView>
   );

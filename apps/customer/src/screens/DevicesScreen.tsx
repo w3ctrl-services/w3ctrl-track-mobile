@@ -6,12 +6,15 @@ import {
   RefreshControl,
   SafeAreaView,
   ScrollView,
+  TextInput,
   View,
 } from "react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
-import { Plus, X } from "lucide-react-native";
+import { Plus, Search, X } from "lucide-react-native";
 import {
+  AdSlider,
+  AppHeader,
   Badge,
   Button,
   Card,
@@ -19,6 +22,7 @@ import {
   EmptyState,
   Field,
   LoadingView,
+  Rise,
   Row,
   Segmented,
   Txt,
@@ -28,6 +32,7 @@ import { useT } from "@w3ctrl/i18n";
 import {
   batteryOf,
   getDeviceType,
+  knotsToKmh,
   type DeviceType,
   type TraccarDevice,
   type TraccarPosition,
@@ -60,16 +65,58 @@ function filterLabel(f: "all" | DeviceType, t: (k: string) => string): string {
   return t("Pet");
 }
 
-function statusTone(status: string): "ok" | "alert" | "neutral" {
-  if (status === "online") return "ok";
-  if (status === "offline") return "alert";
+type MotionStatus = "moving" | "parked" | "offline";
+
+function motionStatus(
+  device: TraccarDevice,
+  pos: TraccarPosition | undefined,
+): MotionStatus {
+  if (device.status === "offline") return "offline";
+  return knotsToKmh(pos?.speed ?? 0) > 0 ? "moving" : "parked";
+}
+
+function statusTone(s: MotionStatus): "ok" | "alert" | "neutral" {
+  if (s === "moving") return "ok";
+  if (s === "offline") return "alert";
   return "neutral";
 }
 
-function statusKey(status: string): string {
-  if (status === "online") return "Online";
-  if (status === "offline") return "Offline";
-  return "Unknown";
+function statusKey(s: MotionStatus): string {
+  if (s === "moving") return "Moving";
+  if (s === "offline") return "Offline";
+  return "Parked";
+}
+
+function DeviceTile({
+  device,
+  pos,
+}: {
+  device: TraccarDevice;
+  pos: TraccarPosition | undefined;
+}) {
+  const p = useTheme();
+  const batt = batteryOf(pos ?? null);
+  const st = motionStatus(device, pos);
+  const low = batt != null && batt < 30;
+  const bg = low ? p.alertSoft : st === "moving" ? p.okSoft : p.surface3;
+  const fg = low ? p.alert : st === "moving" ? p.ok : p.muted;
+  const initial = (device.name.trim().charAt(0) || "•").toUpperCase();
+  return (
+    <View
+      style={{
+        width: 46,
+        height: 46,
+        borderRadius: 14,
+        backgroundColor: bg,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Txt variant="subtitle" style={{ color: fg, fontWeight: "800" }}>
+        {initial}
+      </Txt>
+    </View>
+  );
 }
 
 function DeviceRow({
@@ -84,27 +131,60 @@ function DeviceRow({
   const p = useTheme();
   const t = useT();
   const batt = batteryOf(pos ?? null);
+  const kmh = Math.round(knotsToKmh(pos?.speed ?? 0));
+  const st = motionStatus(device, pos);
+  const sub =
+    st === "moving"
+      ? `${kmh} km/h`
+      : (pos?.address ?? `${t("Last seen")} ${formatRelative(device.lastUpdate, t)}`);
   return (
     <Pressable onPress={onPress}>
       <Card style={{ marginBottom: 12 }}>
-        <Row style={{ justifyContent: "space-between" }}>
-          <Row style={{ gap: 10, flex: 1 }}>
-            <DeviceDot type={getDeviceType(device)} size={14} />
-            <Txt variant="subtitle" style={{ flex: 1 }} numberOfLines={1}>
-              {device.name}
+        <Row style={{ gap: 12 }}>
+          <DeviceTile device={device} pos={pos} />
+          <View style={{ flex: 1 }}>
+            <Row style={{ justifyContent: "space-between", alignItems: "center" }}>
+              <Txt variant="subtitle" style={{ flex: 1 }} numberOfLines={1}>
+                {device.name}
+              </Txt>
+              <Badge text={t(statusKey(st))} tone={statusTone(st)} />
+            </Row>
+            <Txt
+              variant="small"
+              color={p.muted}
+              style={{ marginTop: 3 }}
+              numberOfLines={1}
+            >
+              {device.uniqueId} · {sub}
             </Txt>
-          </Row>
-          <Badge text={t(statusKey(device.status))} tone={statusTone(device.status)} />
-        </Row>
-        <Row style={{ gap: 12, marginTop: 8 }}>
-          <Txt variant="small" color={p.muted}>
-            {t("Last seen")}: {formatRelative(device.lastUpdate, t)}
-          </Txt>
-          {batt != null ? (
-            <Txt variant="small" color={batteryColor(p, batt)}>
-              {t("Battery")}: {batt}%
-            </Txt>
-          ) : null}
+            {batt != null ? (
+              <Row style={{ alignItems: "center", gap: 8, marginTop: 8 }}>
+                <View
+                  style={{
+                    flex: 1,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: p.surface3,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: `${batt}%`,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: batteryColor(p, batt),
+                    }}
+                  />
+                </View>
+                <Txt
+                  variant="caption"
+                  style={{ color: batteryColor(p, batt), fontWeight: "700" }}
+                >
+                  {batt}%
+                </Txt>
+              </Row>
+            ) : null}
+          </View>
         </Row>
       </Card>
     </Pressable>
@@ -209,6 +289,7 @@ export default function DevicesScreen() {
   const { data: devices, isLoading, refetch, isRefetching } = useDevices();
   const posMap = usePositionMap();
   const [filter, setFilter] = useState<"all" | DeviceType>("all");
+  const [query, setQuery] = useState("");
   const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
@@ -218,23 +299,84 @@ export default function DevicesScreen() {
     }
   }, [route.params?.openAdd, tabNavigation]);
 
-  const filtered = useMemo(
-    () =>
-      (devices ?? []).filter(
-        (d) => filter === "all" || getDeviceType(d) === filter,
-      ),
-    [devices, filter],
-  );
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return (devices ?? [])
+      .filter((d) => filter === "all" || getDeviceType(d) === filter)
+      .filter(
+        (d) =>
+          !q ||
+          d.name.toLowerCase().includes(q) ||
+          d.uniqueId.toLowerCase().includes(q),
+      );
+  }, [devices, filter, query]);
+
+  const onlineCount = (devices ?? []).filter(
+    (d) => d.status !== "offline",
+  ).length;
 
   if (isLoading && !devices) {
     return <LoadingView />;
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: p.paper }}>
+    <View style={{ flex: 1, backgroundColor: p.paper }}>
+      <AppHeader
+        title={t("Devices")}
+        subtitle={`${devices?.length ?? 0} ${t("Trackers")} · ${onlineCount} ${t("Online")}`}
+        right={
+          <Pressable
+            onPress={() => setAddOpen(true)}
+            accessibilityLabel={t("Add device")}
+            hitSlop={10}
+          >
+            <Plus color="#ffffff" size={22} />
+          </Pressable>
+        }
+      />
+
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <Row style={{ gap: 8, paddingRight: 16 }}>
+        <Rise delay={40}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: p.surface,
+              borderColor: p.line,
+              borderWidth: 1,
+              borderRadius: 14,
+              paddingHorizontal: 12,
+              height: 46,
+            }}
+          >
+            <Search color={p.faint} size={18} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t("Search by name or ID…")}
+              placeholderTextColor={p.faint}
+              style={{
+                flex: 1,
+                marginLeft: 8,
+                fontSize: 15,
+                color: p.ink,
+              }}
+            />
+            {query ? (
+              <Pressable onPress={() => setQuery("")} hitSlop={8}>
+                <X color={p.muted} size={18} />
+              </Pressable>
+            ) : null}
+          </View>
+        </Rise>
+
+        <Rise delay={80}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginTop: 12 }}
+            contentContainerStyle={{ gap: 8, paddingRight: 16 }}
+          >
             {FILTERS.map((f) => {
               const active = f === filter;
               return (
@@ -266,8 +408,8 @@ export default function DevicesScreen() {
                 </Pressable>
               );
             })}
-          </Row>
-        </ScrollView>
+          </ScrollView>
+        </Rise>
       </View>
 
       <FlatList
@@ -287,39 +429,21 @@ export default function DevicesScreen() {
             hint={t("Tap + to add your first tracker.")}
           />
         }
-        renderItem={({ item }) => (
-          <DeviceRow
-            device={item}
-            pos={posMap.get(item.id)}
-            onPress={() => navigation.navigate("DeviceDetail", { deviceId: item.id })}
-          />
+        ListFooterComponent={<AdSlider style={{ marginTop: 4 }} />}
+        renderItem={({ item, index }) => (
+          <Rise delay={120 + Math.min(index, 6) * 50}>
+            <DeviceRow
+              device={item}
+              pos={posMap.get(item.id)}
+              onPress={() =>
+                navigation.navigate("DeviceDetail", { deviceId: item.id })
+              }
+            />
+          </Rise>
         )}
       />
 
-      <Pressable
-        onPress={() => setAddOpen(true)}
-        accessibilityLabel={t("Add device")}
-        style={{
-          position: "absolute",
-          right: 20,
-          bottom: 24,
-          width: 60,
-          height: 60,
-          borderRadius: 30,
-          backgroundColor: p.brand,
-          alignItems: "center",
-          justifyContent: "center",
-          elevation: 4,
-          shadowColor: "#000",
-          shadowOpacity: 0.25,
-          shadowRadius: 6,
-          shadowOffset: { width: 0, height: 3 },
-        }}
-      >
-        <Plus color="#12100d" size={28} />
-      </Pressable>
-
       <AddDeviceModal open={addOpen} onClose={() => setAddOpen(false)} />
-    </SafeAreaView>
+    </View>
   );
 }

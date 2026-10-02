@@ -1,15 +1,17 @@
 import React, { useState } from "react";
-import { Alert, Pressable, View } from "react-native";
+import { Alert, Pressable, ScrollView, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { ChevronRight, LogOut } from "lucide-react-native";
+import { ChevronRight, KeyRound, LogOut, ShieldCheck } from "lucide-react-native";
 import {
+  AdSlider,
+  AppHeader,
   Badge,
   Button,
   Card,
   Divider,
   Field,
+  Rise,
   Row,
-  Screen,
   Segmented,
   Txt,
   useTheme,
@@ -38,10 +40,27 @@ function planLabel(plan: string, t: (k: string) => string): string {
   return t("Basic");
 }
 
-function SectionTitle({ children }: { children: string }) {
+function planPrice(plan: string): string {
+  if (plan === "plus") return "₹499 / year";
+  if (plan === "fleet") return "₹349 / device / year";
+  return "₹299 / year";
+}
+
+function Kicker({ children }: { children: string }) {
   const p = useTheme();
   return (
-    <Txt variant="subtitle" color={p.ink} style={{ marginTop: 20, marginBottom: 8 }}>
+    <Txt
+      variant="caption"
+      color={p.muted}
+      style={{
+        marginTop: 20,
+        marginBottom: 10,
+        marginLeft: 4,
+        textTransform: "uppercase",
+        letterSpacing: 1,
+        fontWeight: "600",
+      }}
+    >
       {children}
     </Txt>
   );
@@ -49,7 +68,7 @@ function SectionTitle({ children }: { children: string }) {
 
 /* ------------------------------------------------------- TOTP section */
 
-function TotpSection() {
+function TotpBody() {
   const p = useTheme();
   const t = useT();
   const { user, refreshUser } = useAuth();
@@ -146,10 +165,7 @@ function TotpSection() {
   }
 
   return (
-    <Card>
-      <Txt variant="subtitle" style={{ marginBottom: 4 }}>
-        {t("Two-factor authentication")}
-      </Txt>
+    <View>
       {enabled ? (
         <>
           <Txt variant="small" color={p.ok} style={{ marginBottom: 12 }}>
@@ -228,13 +244,13 @@ function TotpSection() {
           <Button title={t("Generate key")} onPress={generate} loading={busy} />
         </>
       )}
-    </Card>
+    </View>
   );
 }
 
 /* ----------------------------------------------------- password section */
 
-function PasswordSection() {
+function PasswordBody() {
   const p = useTheme();
   const t = useT();
   const { user, refreshUser } = useAuth();
@@ -276,10 +292,7 @@ function PasswordSection() {
   }
 
   return (
-    <Card>
-      <Txt variant="subtitle" style={{ marginBottom: 12 }}>
-        {t("Change password")}
-      </Txt>
+    <View>
       <Field
         label={t("Current password")}
         value={current}
@@ -305,7 +318,7 @@ function PasswordSection() {
         </Txt>
       ) : null}
       <Button title={t("Save")} onPress={save} loading={busy} disabled={!next} />
-    </Card>
+    </View>
   );
 }
 
@@ -313,7 +326,7 @@ function PasswordSection() {
 
 type Plan = "basic" | "plus" | "fleet";
 
-function PlanSection() {
+function PlanBody() {
   const p = useTheme();
   const t = useT();
   const { user, refreshUser } = useAuth();
@@ -361,20 +374,32 @@ function PlanSection() {
   }
 
   return (
-    <Card>
-      <Row style={{ justifyContent: "space-between", marginBottom: 8 }}>
-        <Txt variant="subtitle">{t("Plan")}</Txt>
-        <Badge text={planLabel(plan, t)} tone="brand" />
+    <View>
+      <Row style={{ justifyContent: "space-between", alignItems: "center" }}>
+        <Txt variant="title" style={{ color: "#ffffff" }}>
+          {planLabel(plan, t)}
+        </Txt>
+        <Badge
+          text={pending ? t("Upgrade requested") : t("Active")}
+          tone={pending ? "warn" : "brand"}
+        />
       </Row>
-      <Txt variant="small" color={p.muted} style={{ marginBottom: 12 }}>
-        {t("Plan expiry")}: {formatDate(expiry)}
+      <Txt variant="small" style={{ color: "#b9b9c2", marginTop: 4 }}>
+        {planPrice(plan)} · {t("Plan expiry")}: {formatDate(expiry)}
       </Txt>
       {pending ? (
-        <Txt variant="small" color={p.warn}>
+        <Txt variant="small" color={p.warn} style={{ marginTop: 12 }}>
           {t("Upgrade request sent.")}
         </Txt>
       ) : open ? (
-        <>
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderRadius: 12,
+            padding: 12,
+            marginTop: 12,
+          }}
+        >
           <Segmented<Plan>
             options={[
               { value: "basic", label: t("Basic") },
@@ -403,11 +428,16 @@ function PlanSection() {
             onPress={() => setOpen(false)}
             style={{ marginTop: 8 }}
           />
-        </>
+        </View>
       ) : (
-        <Button kind="secondary" title={t("Upgrade plan")} onPress={() => setOpen(true)} />
+        <Button
+          kind="secondary"
+          title={t("Upgrade plan")}
+          onPress={() => setOpen(true)}
+          style={{ marginTop: 14 }}
+        />
       )}
-    </Card>
+    </View>
   );
 }
 
@@ -419,11 +449,14 @@ export default function SettingsScreen() {
   const { lang, setLang } = useLang();
   const navigation = useNavigation<TabNav<"Settings">>();
   const { user, logout } = useAuth();
+  const [totpOpen, setTotpOpen] = useState(false);
+  const [pwdOpen, setPwdOpen] = useState(false);
 
   const attrs = attrsOf(user);
   const role = str(attrs.role) ?? "customer";
   const plan = str(attrs.plan) ?? "basic";
   const isAdmin = role === "admin" || role === "superadmin";
+  const totpEnabled = !!user?.totpKey;
 
   function confirmSignOut() {
     Alert.alert(t("Sign out"), t("Are you sure you want to sign out?"), [
@@ -433,63 +466,154 @@ export default function SettingsScreen() {
   }
 
   return (
-    <Screen>
-      <Card>
-        <Txt variant="title">{user?.name ?? ""}</Txt>
-        <Txt variant="small" color={p.muted} style={{ marginTop: 4 }}>
-          {user?.email ?? ""}
-        </Txt>
-        <View style={{ marginTop: 10 }}>
-          <Badge text={planLabel(plan, t)} tone="brand" />
-        </View>
-      </Card>
+    <View style={{ flex: 1, backgroundColor: p.paper }}>
+      <AppHeader title={t("Settings")} subtitle={t("ACCOUNT & PREFERENCES")} />
+      <ScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Rise delay={0}>
+          <Card>
+            <Row style={{ alignItems: "center", gap: 12 }}>
+              <View
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 26,
+                  backgroundColor: p.brandSoft,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Txt variant="title" style={{ color: p.brandInk }}>
+                  {(user?.name ?? "?").charAt(0).toUpperCase()}
+                </Txt>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Txt variant="subtitle">{user?.name ?? ""}</Txt>
+                <Txt variant="small" color={p.muted} style={{ marginTop: 2 }}>
+                  {user?.email ?? ""}
+                </Txt>
+              </View>
+              <Badge text={planLabel(plan, t)} tone="brand" />
+            </Row>
+          </Card>
+        </Rise>
 
-      <SectionTitle>{t("Language")}</SectionTitle>
-      <Card>
-        <Segmented<Lang>
-          options={[
-            { value: "en", label: t("English") },
-            { value: "hi", label: t("Hindi") },
-          ]}
-          value={lang}
-          onChange={setLang}
-        />
-      </Card>
+        <Rise delay={60}>
+          <Kicker>{t("Preferences")}</Kicker>
+          <Card>
+            <Segmented<Lang>
+              options={[
+                { value: "en", label: t("English") },
+                { value: "hi", label: t("Hindi") },
+              ]}
+              value={lang}
+              onChange={setLang}
+            />
+          </Card>
+        </Rise>
 
-      <SectionTitle>{t("Plan")}</SectionTitle>
-      <PlanSection />
-
-      <SectionTitle>{t("Security")}</SectionTitle>
-      <TotpSection />
-      <View style={{ height: 12 }} />
-      <PasswordSection />
-
-      {isAdmin ? (
-        <>
-          <SectionTitle>{t("Admin")}</SectionTitle>
-          <Pressable onPress={() => navigation.navigate("Admin")}>
-            <Card>
-              <Row style={{ justifyContent: "space-between" }}>
-                <Txt variant="subtitle">{t("Admin")}</Txt>
+        <Rise delay={120}>
+          <Kicker>{t("Security")}</Kicker>
+          <Card style={{ paddingVertical: 4, paddingHorizontal: 16 }}>
+            <Pressable onPress={() => setTotpOpen((v) => !v)}>
+              <Row style={{ alignItems: "center", paddingVertical: 14, gap: 12 }}>
+                <ShieldCheck color={p.muted} size={20} />
+                <View style={{ flex: 1 }}>
+                  <Txt variant="small" style={{ fontWeight: "600", fontSize: 14 }}>
+                    {t("Two-factor auth")}
+                  </Txt>
+                  <Txt variant="caption" color={p.muted} style={{ marginTop: 2 }}>
+                    {t("Authenticator app")}
+                  </Txt>
+                </View>
+                {totpEnabled ? (
+                  <Badge text={t("On")} tone="ok" />
+                ) : (
+                  <Txt variant="small" style={{ color: p.brandInk, fontWeight: "700" }}>
+                    {t("Set up →")}
+                  </Txt>
+                )}
+              </Row>
+            </Pressable>
+            {totpOpen ? (
+              <>
+                <Divider />
+                <View style={{ paddingVertical: 12 }}>
+                  <TotpBody />
+                </View>
+              </>
+            ) : null}
+            <Divider />
+            <Pressable onPress={() => setPwdOpen((v) => !v)}>
+              <Row style={{ alignItems: "center", paddingVertical: 14, gap: 12 }}>
+                <KeyRound color={p.muted} size={20} />
+                <View style={{ flex: 1 }}>
+                  <Txt variant="small" style={{ fontWeight: "600", fontSize: 14 }}>
+                    {t("Change password")}
+                  </Txt>
+                </View>
                 <ChevronRight color={p.muted} size={20} />
               </Row>
-              <Txt variant="small" color={p.muted} style={{ marginTop: 4 }}>
-                {t("Manage users, plans and requests.")}
-              </Txt>
-            </Card>
-          </Pressable>
-        </>
-      ) : null}
+            </Pressable>
+            {pwdOpen ? (
+              <>
+                <Divider />
+                <View style={{ paddingVertical: 12 }}>
+                  <PasswordBody />
+                </View>
+              </>
+            ) : null}
+          </Card>
+        </Rise>
 
-      <Divider />
-      <Button kind="secondary" title={t("Sign out")} onPress={confirmSignOut} />
-      <Row style={{ justifyContent: "center", marginTop: 16, gap: 8 }}>
-        <LogOut color={p.faint} size={14} />
-        <Txt variant="caption" color={p.faint}>
-          W3ctrl Track
-        </Txt>
-      </Row>
-      <View style={{ height: 8 }} />
-    </Screen>
+        <Rise delay={180}>
+          <Kicker>{t("Plan")}</Kicker>
+          <View
+            style={{
+              backgroundColor: "#101014",
+              borderRadius: 18,
+              padding: 16,
+            }}
+          >
+            <PlanBody />
+          </View>
+        </Rise>
+
+        {isAdmin ? (
+          <Rise delay={240}>
+            <Kicker>{t("Admin")}</Kicker>
+            <Pressable onPress={() => navigation.navigate("Admin")}>
+              <Card>
+                <Row style={{ justifyContent: "space-between", alignItems: "center" }}>
+                  <Txt variant="subtitle">{t("Admin")}</Txt>
+                  <ChevronRight color={p.muted} size={20} />
+                </Row>
+                <Txt variant="small" color={p.muted} style={{ marginTop: 4 }}>
+                  {t("Manage users, plans and requests.")}
+                </Txt>
+              </Card>
+            </Pressable>
+          </Rise>
+        ) : null}
+
+        <Rise delay={isAdmin ? 300 : 240}>
+          <View style={{ height: 20 }} />
+          <Button kind="danger" title={t("Sign out")} onPress={confirmSignOut} />
+          <Row style={{ justifyContent: "center", marginTop: 16, gap: 8 }}>
+            <LogOut color={p.faint} size={14} />
+            <Txt variant="caption" color={p.faint}>
+              W3ctrl Track
+            </Txt>
+          </Row>
+          <View style={{ height: 8 }} />
+        </Rise>
+
+        <Rise delay={isAdmin ? 360 : 300}>
+          <AdSlider />
+        </Rise>
+      </ScrollView>
+    </View>
   );
 }

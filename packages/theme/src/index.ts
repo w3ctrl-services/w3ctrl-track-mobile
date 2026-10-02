@@ -32,7 +32,7 @@ export interface Palette {
 }
 
 export const light: Palette = {
-  paper: "#faf8f4",
+  paper: "#f4f4f6",
   surface: "#ffffff",
   surface2: "#f4f0e9",
   surface3: "#ece6dc",
@@ -40,7 +40,7 @@ export const light: Palette = {
   ink2: "#4a443c",
   muted: "#6e6760",
   faint: "#706859",
-  line: "#e6e0d6",
+  line: "#e9e9ee",
   lineStrong: "#d3cabb",
   brand: "#ff9900",
   brandHover: "#e88a00",

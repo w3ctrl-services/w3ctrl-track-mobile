@@ -1,12 +1,16 @@
 import React, { useMemo, useState } from "react";
-import { FlatList, Pressable, RefreshControl, SafeAreaView, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import {
+  AdSlider,
+  AppHeader,
   Badge,
   Button,
   Card,
   EmptyState,
   Field,
   LoadingView,
+  Rise,
   Row,
   Segmented,
   Txt,
@@ -14,8 +18,8 @@ import {
 } from "@w3ctrl/ui";
 import { useT } from "@w3ctrl/i18n";
 import type { TraccarUser } from "@w3ctrl/api";
-import { useUpdateUser, useUsers } from "../api/hooks";
-import { formatDate } from "../utils/format";
+import { useDevices, useUpdateUser, useUsers } from "../api/hooks";
+import type { RootNav } from "../navigation/types";
 
 type Attrs = Record<string, unknown>;
 type Role = "customer" | "admin" | "superadmin";
@@ -60,6 +64,58 @@ function featureRequestOf(u: TraccarUser): { text?: unknown; at?: unknown } | nu
     : null;
 }
 
+function Kicker({ children }: { children: string }) {
+  const p = useTheme();
+  return (
+    <Txt
+      variant="caption"
+      color={p.muted}
+      style={{
+        marginTop: 20,
+        marginBottom: 10,
+        marginLeft: 4,
+        textTransform: "uppercase",
+        letterSpacing: 1,
+        fontWeight: "600",
+      }}
+    >
+      {children}
+    </Txt>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <Card style={{ flex: 1, minWidth: "46%" }}>
+      <Txt variant="title">{value}</Txt>
+      <Txt variant="caption" color="#8a8a95" style={{ marginTop: 4 }}>
+        {label}
+      </Txt>
+    </Card>
+  );
+}
+
+function Avatar({ name }: { name: string }) {
+  const p = useTheme();
+  return (
+    <View
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: p.brandSoft,
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 12,
+      }}
+    >
+      <Txt variant="small" style={{ color: p.brandInk, fontWeight: "700", fontSize: 14 }}>
+        {(name ?? "?").charAt(0).toUpperCase()}
+      </Txt>
+    </View>
+  );
+}
+
 function UserEditor({ user, onDone }: { user: TraccarUser; onDone: () => void }) {
   const p = useTheme();
   const t = useT();
@@ -95,7 +151,7 @@ function UserEditor({ user, onDone }: { user: TraccarUser; onDone: () => void })
   }
 
   return (
-    <Card style={{ marginBottom: 12 }}>
+    <Card style={{ marginTop: 8, marginBottom: 12 }}>
       <Txt variant="small" style={{ fontWeight: "600", marginBottom: 6 }}>
         {t("Role")}
       </Txt>
@@ -153,30 +209,31 @@ function UserRow({
   onEdit: () => void;
   onDone: () => void;
 }) {
-  const p = useTheme();
   const t = useT();
   const attrs = (user.attributes ?? {}) as Attrs;
+  const role = roleOf(user);
   return (
     <View style={{ marginBottom: 12 }}>
       <Pressable onPress={onEdit}>
         <Card>
-          <Txt variant="subtitle" numberOfLines={1}>
-            {user.name}
-          </Txt>
-          <Txt variant="small" color={p.muted} style={{ marginTop: 2 }} numberOfLines={1}>
-            {user.email}
-          </Txt>
-          <Row style={{ gap: 8, marginTop: 8 }}>
-            <Badge text={roleLabel(roleOf(user), t)} tone="neutral" />
-            <Badge text={planLabel(str(attrs.plan) ?? "basic", t)} tone="brand" />
+          <Row style={{ alignItems: "center" }}>
+            <Avatar name={user.name} />
+            <View style={{ flex: 1 }}>
+              <Txt variant="small" style={{ fontWeight: "600", fontSize: 14 }} numberOfLines={1}>
+                {user.name}
+              </Txt>
+              <Txt variant="caption" color="#8a8a95" style={{ marginTop: 2 }} numberOfLines={1}>
+                {user.email} · {planLabel(str(attrs.plan) ?? "basic", t)}
+              </Txt>
+            </View>
+            <Badge
+              text={roleLabel(role, t)}
+              tone={role === "customer" ? "neutral" : "alert"}
+            />
           </Row>
         </Card>
       </Pressable>
-      {editing ? (
-        <View style={{ marginTop: 8 }}>
-          <UserEditor user={user} onDone={onDone} />
-        </View>
-      ) : null}
+      {editing ? <UserEditor user={user} onDone={onDone} /> : null}
     </View>
   );
 }
@@ -194,7 +251,6 @@ function RequestCard({
   onDismiss: () => void;
   busy: boolean;
 }) {
-  const p = useTheme();
   const t = useT();
   const req = kind === "upgrade" ? upgradeRequestOf(user) : featureRequestOf(user);
   const detail =
@@ -204,12 +260,19 @@ function RequestCard({
         }`
       : str((req as { text?: unknown })?.text) ?? "";
   return (
-    <Card style={{ marginBottom: 12, borderColor: p.warn }}>
-      <Txt variant="subtitle">{user.name}</Txt>
-      <Txt variant="small" color={p.muted} style={{ marginTop: 2 }}>
-        {user.email}
-      </Txt>
-      <Txt variant="body" style={{ marginTop: 8 }}>
+    <Card style={{ marginBottom: 12 }}>
+      <Row style={{ alignItems: "center" }}>
+        <Avatar name={user.name} />
+        <View style={{ flex: 1 }}>
+          <Txt variant="small" style={{ fontWeight: "600", fontSize: 14 }}>
+            {user.name}
+          </Txt>
+          <Txt variant="caption" color="#8a8a95" style={{ marginTop: 2 }}>
+            {user.email}
+          </Txt>
+        </View>
+      </Row>
+      <Txt variant="small" style={{ marginTop: 10 }}>
         {kind === "upgrade" ? t("Upgrade request") : t("Feature request")}: {detail}
       </Txt>
       <Row style={{ gap: 12, marginTop: 12 }}>
@@ -236,7 +299,9 @@ function RequestCard({
 export default function AdminScreen() {
   const p = useTheme();
   const t = useT();
+  const navigation = useNavigation<RootNav>();
   const { data: users, isLoading, refetch, isRefetching } = useUsers();
+  const { data: devices } = useDevices();
   const updateUser = useUpdateUser();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -246,6 +311,18 @@ export default function AdminScreen() {
       (users ?? []).filter(
         (u) => upgradeRequestOf(u) !== null || featureRequestOf(u) !== null,
       ),
+    [users],
+  );
+  const upgrades = useMemo(
+    () => (users ?? []).filter((u) => upgradeRequestOf(u) !== null),
+    [users],
+  );
+  const features = useMemo(
+    () => (users ?? []).filter((u) => featureRequestOf(u) !== null),
+    [users],
+  );
+  const adminCount = useMemo(
+    () => (users ?? []).filter((u) => roleOf(u) !== "customer").length,
     [users],
   );
 
@@ -297,10 +374,13 @@ export default function AdminScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: p.paper }}>
-      <FlatList
-        data={users ?? []}
-        keyExtractor={(u) => String(u.id)}
+    <View style={{ flex: 1, backgroundColor: p.paper }}>
+      <AppHeader
+        title={t("Admin console")}
+        subtitle={t("Manage users, plans and requests.")}
+        onBack={() => navigation.goBack()}
+      />
+      <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         refreshControl={
           <RefreshControl
@@ -309,58 +389,74 @@ export default function AdminScreen() {
             tintColor={p.brand}
           />
         }
-        ListHeaderComponent={
-          <>
-            {pending.length > 0 ? (
-              <>
-                <Txt variant="subtitle" style={{ marginBottom: 8 }}>
-                  {t("Requests")}
-                </Txt>
-                {pending.map((u) => {
-                  const up = upgradeRequestOf(u);
-                  const feat = featureRequestOf(u);
-                  return (
-                    <View key={`req-${u.id}`}>
-                      {up ? (
-                        <RequestCard
-                          user={u}
-                          kind="upgrade"
-                          onApprove={() => approveUpgrade(u)}
-                          onDismiss={() => dismiss(u, "upgradeRequest")}
-                          busy={busyKey === `approve-${u.id}` || busyKey === `dismiss-${u.id}-upgradeRequest`}
-                        />
-                      ) : null}
-                      {feat ? (
-                        <RequestCard
-                          user={u}
-                          kind="feature"
-                          onDismiss={() => dismiss(u, "featureRequest")}
-                          busy={busyKey === `dismiss-${u.id}-featureRequest`}
-                        />
-                      ) : null}
-                    </View>
-                  );
-                })}
-              </>
-            ) : null}
-            <Txt variant="subtitle" style={{ marginBottom: 8, marginTop: pending.length > 0 ? 8 : 0 }}>
-              {t("Users")}
-            </Txt>
-          </>
-        }
-        ListEmptyComponent={<EmptyState title={t("No users found.")} />}
-        renderItem={({ item }) => (
-          <UserRow
-            user={item}
-            editing={editingId === item.id}
-            onEdit={() => setEditingId(editingId === item.id ? null : item.id)}
-            onDone={() => {
-              setEditingId(null);
-              refetch();
-            }}
-          />
-        )}
-      />
-    </SafeAreaView>
+      >
+        <Rise delay={0}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+            <StatCard label={t("Users")} value={String(users?.length ?? 0)} />
+            <StatCard label={t("Devices")} value={String(devices?.length ?? 0)} />
+            <StatCard label={t("Pending")} value={String(pending.length)} />
+            <StatCard label={t("Admins")} value={String(adminCount)} />
+          </View>
+        </Rise>
+
+        {upgrades.length > 0 ? (
+          <Rise delay={60}>
+            <Kicker>{t("Upgrade queue")}</Kicker>
+            {upgrades.map((u) => (
+              <RequestCard
+                key={`upgrade-${u.id}`}
+                user={u}
+                kind="upgrade"
+                onApprove={() => approveUpgrade(u)}
+                onDismiss={() => dismiss(u, "upgradeRequest")}
+                busy={
+                  busyKey === `approve-${u.id}` ||
+                  busyKey === `dismiss-${u.id}-upgradeRequest`
+                }
+              />
+            ))}
+          </Rise>
+        ) : null}
+
+        {features.length > 0 ? (
+          <Rise delay={120}>
+            <Kicker>{t("Feature requests")}</Kicker>
+            {features.map((u) => (
+              <RequestCard
+                key={`feature-${u.id}`}
+                user={u}
+                kind="feature"
+                onDismiss={() => dismiss(u, "featureRequest")}
+                busy={busyKey === `dismiss-${u.id}-featureRequest`}
+              />
+            ))}
+          </Rise>
+        ) : null}
+
+        <Rise delay={180}>
+          <Kicker>{t("Users")}</Kicker>
+          {(users ?? []).length === 0 ? (
+            <EmptyState title={t("No users found.")} />
+          ) : (
+            (users ?? []).map((u) => (
+              <UserRow
+                key={String(u.id)}
+                user={u}
+                editing={editingId === u.id}
+                onEdit={() => setEditingId(editingId === u.id ? null : u.id)}
+                onDone={() => {
+                  setEditingId(null);
+                  refetch();
+                }}
+              />
+            ))
+          )}
+        </Rise>
+
+        <Rise delay={240}>
+          <AdSlider />
+        </Rise>
+      </ScrollView>
+    </View>
   );
 }

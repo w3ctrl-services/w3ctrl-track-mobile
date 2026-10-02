@@ -1,15 +1,15 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Alert, Pressable, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Alert, Pressable, ScrollView, View } from "react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { Check } from "lucide-react-native";
 import {
+  AppHeader,
   Button,
   Card,
   DeviceDot,
   Field,
   MapView,
-  Row,
-  Screen,
+  Rise,
   Txt,
   useTheme,
   type MapCircle,
@@ -100,10 +100,6 @@ export default function GeofenceEditScreen() {
   const deleteGeofence = useDeleteGeofence();
   const linkPermission = useLinkPermission();
   const unlinkPermission = useUnlinkPermission();
-
-  useLayoutEffect(() => {
-    navigation.setOptions({ title: editing ? t("Edit geofence") : t("New geofence") });
-  }, [navigation, editing, t]);
 
   useEffect(() => {
     if (existing && !initialized.current) {
@@ -197,81 +193,121 @@ export default function GeofenceEditScreen() {
   }
 
   return (
-    <Screen>
-      <Field
-        label={t("Geofence name")}
-        value={name}
-        onChangeText={setName}
-        placeholder={t("Geofence name")}
+    <View style={{ flex: 1, backgroundColor: p.paper }}>
+      <AppHeader
+        title={editing ? t("Edit geofence") : t("New geofence")}
+        subtitle={t("Draw a zone on the map")}
+        onBack={() => navigation.goBack()}
       />
-      <Field
-        label={t("Radius (metres)")}
-        value={radius}
-        onChangeText={(v) => setRadius(v.replace(/[^0-9.]/g, ""))}
-        keyboardType="numeric"
-        placeholder="200"
-      />
-      <Txt variant="small" color={p.muted} style={{ marginBottom: 8 }}>
-        {t("Tap on the map to place the centre, then set the radius.")}
-      </Txt>
-      <View
-        style={{
-          height: 280,
-          borderRadius: 16,
-          overflow: "hidden",
-          marginBottom: 16,
-          borderWidth: 1,
-          borderColor: p.line,
-        }}
+      <ScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+        keyboardShouldPersistTaps="handled"
       >
-        <MapView
-          markers={
-            center
-              ? [{ id: "center", lat: center.lat, lng: center.lng, color: p.brand, selected: true }]
-              : []
-          }
-          circles={circles}
-          center={center ? [center.lat, center.lng] : null}
-          zoom={14}
-          onTap={(lat, lng) => setCenter({ lat, lng })}
-        />
-      </View>
-
-      <Txt variant="subtitle" style={{ marginBottom: 4 }}>
-        {t("Link devices")}
-      </Txt>
-      <Card style={{ marginBottom: 16 }}>
-        {(devices ?? []).map((d) => (
-          <DeviceCheck
-            key={d.id}
-            name={d.name}
-            dtype={getDeviceType(d)}
-            checked={selected.includes(d.id)}
-            onToggle={() => toggle(d.id)}
+        <Rise delay={0}>
+          <Field
+            label={t("Geofence name")}
+            value={name}
+            onChangeText={setName}
+            placeholder={t("Geofence name")}
           />
-        ))}
-        {(devices ?? []).length === 0 ? (
-          <Txt variant="small" color={p.muted}>
-            {t("No devices yet.")}
+        </Rise>
+
+        <Rise delay={60}>
+          <Card style={{ marginBottom: 16 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                marginBottom: 4,
+              }}
+            >
+              <Txt variant="small" style={{ fontWeight: "600" }} color={p.muted}>
+                {t("Radius")}
+              </Txt>
+              <Txt variant="title" color={p.brandInk}>
+                {radiusNum > 0 ? `${Math.round(radiusNum)} m` : "—"}
+              </Txt>
+            </View>
+            <Field
+              label={t("Radius (metres)")}
+              value={radius}
+              onChangeText={(v) => setRadius(v.replace(/[^0-9.]/g, ""))}
+              keyboardType="numeric"
+              placeholder="200"
+            />
+            <View style={{ height: 4 }} />
+          </Card>
+        </Rise>
+
+        <Rise delay={120}>
+          <Txt variant="small" color={p.muted} style={{ marginBottom: 8 }}>
+            {t("Tap on the map to place the centre, then set the radius.")}
+          </Txt>
+          <View
+            style={{
+              height: 230,
+              borderRadius: 16,
+              overflow: "hidden",
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: p.line,
+            }}
+          >
+            <MapView
+              markers={
+                center
+                  ? [{ id: "center", lat: center.lat, lng: center.lng, color: p.brand, selected: true }]
+                  : []
+              }
+              circles={circles}
+              center={center ? [center.lat, center.lng] : null}
+              zoom={14}
+              onTap={(lat, lng) => setCenter({ lat, lng })}
+            />
+          </View>
+        </Rise>
+
+        <Rise delay={180}>
+          <Txt variant="subtitle" style={{ marginBottom: 4 }}>
+            {t("Link devices")}
+          </Txt>
+          <Card style={{ marginBottom: 16 }}>
+            {(devices ?? []).map((d) => (
+              <DeviceCheck
+                key={d.id}
+                name={d.name}
+                dtype={getDeviceType(d)}
+                checked={selected.includes(d.id)}
+                onToggle={() => toggle(d.id)}
+              />
+            ))}
+            {(devices ?? []).length === 0 ? (
+              <Txt variant="small" color={p.muted}>
+                {t("No devices yet.")}
+              </Txt>
+            ) : null}
+          </Card>
+        </Rise>
+
+        {error ? (
+          <Txt variant="small" color={p.alert} style={{ marginBottom: 12 }}>
+            {error}
           </Txt>
         ) : null}
-      </Card>
-
-      {error ? (
-        <Txt variant="small" color={p.alert} style={{ marginBottom: 12 }}>
-          {error}
-        </Txt>
-      ) : null}
-      <Button title={t("Save")} onPress={save} loading={busy} />
-      {editing ? (
-        <Button
-          kind="danger"
-          title={t("Delete")}
-          onPress={confirmDelete}
-          style={{ marginTop: 12 }}
-        />
-      ) : null}
-      <View style={{ height: 8 }} />
-    </Screen>
+        <Rise delay={240}>
+          <Button title={t("Save")} onPress={save} loading={busy} />
+          {editing ? (
+            <Button
+              kind="danger"
+              title={t("Delete")}
+              onPress={confirmDelete}
+              style={{ marginTop: 12 }}
+            />
+          ) : null}
+        </Rise>
+        <View style={{ height: 8 }} />
+      </ScrollView>
+    </View>
   );
 }
