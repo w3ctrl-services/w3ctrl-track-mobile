@@ -7,8 +7,13 @@ import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   traccar,
+  type TraccarCalendar,
+  type TraccarCommand,
+  type TraccarComputedAttribute,
   type TraccarDevice,
+  type TraccarDriver,
   type TraccarGeofence,
+  type TraccarMaintenance,
   type TraccarNotification,
   type TraccarPosition,
   type TraccarUser,
@@ -228,5 +233,138 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: (user: TraccarUser) => traccar.updateUser(user),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+/* ------------------------------------------------------- fleet (Traccar) */
+
+export function useDrivers() {
+  return useQuery({ queryKey: ["drivers"], queryFn: traccar.drivers });
+}
+
+export function useCreateDriver() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Omit<TraccarDriver, "id">) => traccar.createDriver(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["drivers"] }),
+  });
+}
+
+export function useUpdateDriver() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: TraccarDriver }) =>
+      traccar.updateDriver(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["drivers"] }),
+  });
+}
+
+export function useDeleteDriver() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => traccar.deleteDriver(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["drivers"] }),
+  });
+}
+
+export function useCalendars() {
+  return useQuery({ queryKey: ["calendars"], queryFn: traccar.calendars });
+}
+
+export function useCreateCalendar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Omit<TraccarCalendar, "id">) => traccar.createCalendar(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["calendars"] }),
+  });
+}
+
+export function useUpdateCalendar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: TraccarCalendar }) =>
+      traccar.updateCalendar(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["calendars"] }),
+  });
+}
+
+export function useDeleteCalendar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => traccar.deleteCalendar(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["calendars"] }),
+  });
+}
+
+export function useComputedAttributes() {
+  return useQuery({
+    queryKey: ["computedAttributes"],
+    queryFn: traccar.computedAttributes,
+  });
+}
+
+export function useCreateComputedAttribute() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Omit<TraccarComputedAttribute, "id">) =>
+      traccar.createComputedAttribute(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["computedAttributes"] }),
+  });
+}
+
+export function useDeleteComputedAttribute() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => traccar.deleteComputedAttribute(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["computedAttributes"] }),
+  });
+}
+
+export function useMaintenance() {
+  return useQuery({ queryKey: ["maintenance"], queryFn: traccar.maintenance });
+}
+
+export function useCreateMaintenance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Omit<TraccarMaintenance, "id">) => traccar.createMaintenance(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["maintenance"] }),
+  });
+}
+
+export function useUpdateMaintenance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: TraccarMaintenance }) =>
+      traccar.updateMaintenance(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["maintenance"] }),
+  });
+}
+
+export function useDeleteMaintenance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => traccar.deleteMaintenance(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["maintenance"] }),
+  });
+}
+
+export function useSavedCommands() {
+  return useQuery({ queryKey: ["savedCommands"], queryFn: traccar.savedCommands });
+}
+
+export function useCreateSavedCommand() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Omit<TraccarCommand, "id">) => traccar.createSavedCommand(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["savedCommands"] }),
+  });
+}
+
+export function useDeleteSavedCommand() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => traccar.deleteSavedCommand(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["savedCommands"] }),
   });
 }

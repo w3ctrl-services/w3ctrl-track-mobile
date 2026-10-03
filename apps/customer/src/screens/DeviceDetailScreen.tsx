@@ -20,7 +20,7 @@ import { useT } from "@w3ctrl/i18n";
 import { batteryOf, getDeviceType, knotsToKmh } from "@w3ctrl/api";
 import { batteryColor } from "@w3ctrl/theme";
 import { useDevices, usePositionMap, useSendCommand, useTrips } from "../api/hooks";
-import { formatRelative, startOfDay, weekStart } from "../utils/format";
+import { formatKm, formatRelative, startOfDay, weekStart } from "../utils/format";
 import TripRow from "../components/TripRow";
 import type { RootNav, RootStackParamList } from "../navigation/types";
 
@@ -336,6 +336,8 @@ export default function DeviceDetailScreen() {
                 justifyContent: "space-between",
                 alignItems: "center",
                 paddingVertical: 11,
+                borderBottomWidth: 1,
+                borderBottomColor: p.line,
               }}
             >
               <Txt variant="body">{t("Last update")}</Txt>
@@ -343,6 +345,20 @@ export default function DeviceDetailScreen() {
                 {formatRelative(device.lastUpdate, t)}
               </Txt>
             </Row>
+            {typeof pos?.attributes?.totalDistance === "number" ? (
+              <Row
+                style={{
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 11,
+                }}
+              >
+                <Txt variant="body">{t("Total distance")}</Txt>
+                <Txt variant="body" style={{ fontWeight: "700" }}>
+                  {formatKm(pos.attributes.totalDistance as number)} km
+                </Txt>
+              </Row>
+            ) : null}
             {pos?.address ? (
               <Row
                 style={{

@@ -24,7 +24,7 @@ import {
   weekStart,
 } from "../utils/format";
 import TripRow from "../components/TripRow";
-import type { TabNav } from "../navigation/types";
+import type { RootNav } from "../navigation/types";
 
 /** Timeline event dot — matches the web prototype's blue. */
 const EVENT_BLUE = "#175cd3";
@@ -43,10 +43,11 @@ function fmtTime(d: Date): string {
 }
 
 function StatCard({ label, value }: { label: string; value: string }) {
+  const p = useTheme();
   return (
     <Card style={{ flex: 1, minWidth: "46%" }}>
       <Txt variant="title">{value}</Txt>
-      <Txt variant="caption" color="#8a8a95" style={{ marginTop: 4 }}>
+      <Txt variant="caption" color={p.muted} style={{ marginTop: 4 }}>
         {label}
       </Txt>
     </Card>
@@ -64,7 +65,7 @@ interface TimelineItem {
 export default function ReportsScreen() {
   const p = useTheme();
   const t = useT();
-  const navigation = useNavigation<TabNav<"Settings">>();
+  const navigation = useNavigation<RootNav>();
   const { data: devices } = useDevices();
 
   const [deviceId, setDeviceId] = useState<number | null>(null);
@@ -119,8 +120,8 @@ export default function ReportsScreen() {
 
   const preview = timeline.slice(0, 12);
 
-  /* No export handler existed on this screen — the dark Export button the
-     redesign calls for shares the combined report as CSV via the OS sheet. */
+  /* One-tap CSV export: the orange CTA the redesign calls for shares the
+     combined report as CSV via the OS sheet. */
   function exportCsv() {
     const rows: string[][] = [["time", "kind", "device", "title", "detail"]];
     timeline.forEach((it) =>
@@ -263,7 +264,7 @@ export default function ReportsScreen() {
             onPress={exportCsv}
             style={({ pressed }) => [
               {
-                backgroundColor: "#101014",
+                backgroundColor: p.brand,
                 borderRadius: 16,
                 paddingVertical: 14,
                 flexDirection: "row",
@@ -275,8 +276,8 @@ export default function ReportsScreen() {
               },
             ]}
           >
-            <Download color="#ffffff" size={18} />
-            <Txt style={{ color: "#ffffff", fontWeight: "600", fontSize: 16 }}>
+            <Download color="#181200" size={18} />
+            <Txt style={{ color: "#181200", fontWeight: "600", fontSize: 16 }}>
               {t("Export CSV")}
             </Txt>
           </Pressable>

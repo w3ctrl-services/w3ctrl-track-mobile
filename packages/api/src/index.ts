@@ -127,6 +127,44 @@ export interface TraccarNotification {
   attributes?: Record<string, unknown>;
 }
 
+export interface TraccarDriver {
+  id: number;
+  name: string;
+  uniqueId?: string;
+  attributes?: Record<string, unknown>;
+}
+
+export interface TraccarCalendar {
+  id: number;
+  name: string;
+  data?: string;
+}
+
+export interface TraccarComputedAttribute {
+  id: number;
+  description?: string;
+  attribute: string;
+  expression: string;
+  type?: string;
+}
+
+export interface TraccarMaintenance {
+  id: number;
+  name: string;
+  type?: string;
+  start?: number;
+  period?: number;
+  attributes?: Record<string, unknown>;
+}
+
+export interface TraccarCommand {
+  id: number;
+  description?: string;
+  type: string;
+  attributes?: Record<string, unknown>;
+  textChannel?: boolean;
+}
+
 /* ------------------------------------------------------------------ errors */
 
 export class TraccarError extends Error {
@@ -318,6 +356,44 @@ export const traccar = {
 
   sendCommand: (deviceId: number, type: string, attributes?: Record<string, unknown>) =>
     request<void>("/commands/send", json("POST", { deviceId, type, attributes })),
+
+  savedCommands: () => request<TraccarCommand[]>("/commands"),
+  createSavedCommand: (data: Omit<TraccarCommand, "id">) =>
+    request<TraccarCommand>("/commands", json("POST", data)),
+  deleteSavedCommand: (id: number) =>
+    request<void>(`/commands/${id}`, { method: "DELETE" }),
+
+  drivers: () => request<TraccarDriver[]>("/drivers"),
+  createDriver: (data: Omit<TraccarDriver, "id">) =>
+    request<TraccarDriver>("/drivers", json("POST", data)),
+  updateDriver: (id: number, data: TraccarDriver) =>
+    request<TraccarDriver>(`/drivers/${id}`, json("PUT", data)),
+  deleteDriver: (id: number) =>
+    request<void>(`/drivers/${id}`, { method: "DELETE" }),
+
+  calendars: () => request<TraccarCalendar[]>("/calendars"),
+  createCalendar: (data: Omit<TraccarCalendar, "id">) =>
+    request<TraccarCalendar>("/calendars", json("POST", data)),
+  updateCalendar: (id: number, data: TraccarCalendar) =>
+    request<TraccarCalendar>(`/calendars/${id}`, json("PUT", data)),
+  deleteCalendar: (id: number) =>
+    request<void>(`/calendars/${id}`, { method: "DELETE" }),
+
+  computedAttributes: () => request<TraccarComputedAttribute[]>("/attributes/computed"),
+  createComputedAttribute: (data: Omit<TraccarComputedAttribute, "id">) =>
+    request<TraccarComputedAttribute>("/attributes/computed", json("POST", data)),
+  updateComputedAttribute: (id: number, data: TraccarComputedAttribute) =>
+    request<TraccarComputedAttribute>(`/attributes/computed/${id}`, json("PUT", data)),
+  deleteComputedAttribute: (id: number) =>
+    request<void>(`/attributes/computed/${id}`, { method: "DELETE" }),
+
+  maintenance: () => request<TraccarMaintenance[]>("/maintenance"),
+  createMaintenance: (data: Omit<TraccarMaintenance, "id">) =>
+    request<TraccarMaintenance>("/maintenance", json("POST", data)),
+  updateMaintenance: (id: number, data: TraccarMaintenance) =>
+    request<TraccarMaintenance>(`/maintenance/${id}`, json("PUT", data)),
+  deleteMaintenance: (id: number) =>
+    request<void>(`/maintenance/${id}`, { method: "DELETE" }),
 
   users: () => request<TraccarUser[]>("/users"),
   updateUser: (user: TraccarUser) =>

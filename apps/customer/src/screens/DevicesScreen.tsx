@@ -330,7 +330,7 @@ export default function DevicesScreen() {
             accessibilityLabel={t("Add device")}
             hitSlop={10}
           >
-            <Plus color="#ffffff" size={22} />
+            <Plus color={p.ink} size={22} />
           </Pressable>
         }
       />

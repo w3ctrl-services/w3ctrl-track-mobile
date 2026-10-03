@@ -19,6 +19,7 @@ import {
 import { useT } from "@w3ctrl/i18n";
 import type { TraccarUser } from "@w3ctrl/api";
 import { useDevices, useUpdateUser, useUsers } from "../api/hooks";
+import BrandMark from "../components/BrandMark";
 import type { RootNav } from "../navigation/types";
 
 type Attrs = Record<string, unknown>;
@@ -85,10 +86,11 @@ function Kicker({ children }: { children: string }) {
 }
 
 function StatCard({ label, value }: { label: string; value: string }) {
+  const p = useTheme();
   return (
     <Card style={{ flex: 1, minWidth: "46%" }}>
       <Txt variant="title">{value}</Txt>
-      <Txt variant="caption" color="#8a8a95" style={{ marginTop: 4 }}>
+      <Txt variant="caption" color={p.muted} style={{ marginTop: 4 }}>
         {label}
       </Txt>
     </Card>
@@ -209,6 +211,7 @@ function UserRow({
   onEdit: () => void;
   onDone: () => void;
 }) {
+  const p = useTheme();
   const t = useT();
   const attrs = (user.attributes ?? {}) as Attrs;
   const role = roleOf(user);
@@ -222,7 +225,7 @@ function UserRow({
               <Txt variant="small" style={{ fontWeight: "600", fontSize: 14 }} numberOfLines={1}>
                 {user.name}
               </Txt>
-              <Txt variant="caption" color="#8a8a95" style={{ marginTop: 2 }} numberOfLines={1}>
+              <Txt variant="caption" color={p.muted} style={{ marginTop: 2 }} numberOfLines={1}>
                 {user.email} · {planLabel(str(attrs.plan) ?? "basic", t)}
               </Txt>
             </View>
@@ -251,6 +254,7 @@ function RequestCard({
   onDismiss: () => void;
   busy: boolean;
 }) {
+  const p = useTheme();
   const t = useT();
   const req = kind === "upgrade" ? upgradeRequestOf(user) : featureRequestOf(user);
   const detail =
@@ -267,7 +271,7 @@ function RequestCard({
           <Txt variant="small" style={{ fontWeight: "600", fontSize: 14 }}>
             {user.name}
           </Txt>
-          <Txt variant="caption" color="#8a8a95" style={{ marginTop: 2 }}>
+          <Txt variant="caption" color={p.muted} style={{ marginTop: 2 }}>
             {user.email}
           </Txt>
         </View>
@@ -375,11 +379,25 @@ export default function AdminScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: p.paper }}>
-      <AppHeader
-        title={t("Admin console")}
-        subtitle={t("Manage users, plans and requests.")}
-        onBack={() => navigation.goBack()}
-      />
+      <AppHeader title="" onBack={() => navigation.goBack()}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 12,
+          }}
+        >
+          <BrandMark />
+          <Badge text={t("Owner")} tone="brand" />
+        </View>
+        <Txt style={{ fontSize: 20, fontWeight: "700", color: p.ink }}>
+          {t("Admin console")}
+        </Txt>
+        <Txt variant="caption" color={p.muted} style={{ marginTop: 2 }}>
+          {t("Manage users, plans and requests.")}
+        </Txt>
+      </AppHeader>
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         refreshControl={

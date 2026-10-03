@@ -244,9 +244,11 @@ export function Button({
 /* --------------------------------------- brand (MageArgus reskin) */
 
 /**
- * Black app header. Safe-area aware (top edge only); back chevron, title,
+ * App header. Safe-area aware (top edge only); back chevron, title,
  * optional subtitle and a right-side node; `children` renders below the row
- * for custom header rows.
+ * for custom header rows. Default tone is "light" (white background, dark
+ * text, hairline bottom border — the v3 light chrome); `tone="dark"` keeps
+ * the old black-header style for screens that need it.
  */
 export function AppHeader({
   title,
@@ -255,7 +257,7 @@ export function AppHeader({
   right,
   children,
   style,
-  tone = "dark",
+  tone = "light",
 }: {
   title: string;
   subtitle?: string;
@@ -263,7 +265,7 @@ export function AppHeader({
   right?: React.ReactNode;
   children?: React.ReactNode;
   style?: ViewStyle;
-  tone?: "dark" | "light";
+  tone?: "light" | "dark";
 }) {
   const light = tone === "light";
   return (
@@ -284,12 +286,12 @@ export function AppHeader({
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           {onBack ? (
             <Pressable onPress={onBack} hitSlop={8} style={{ marginLeft: -6 }}>
-              <ChevronLeft color={light ? "#141417" : "#ffffff"} size={24} />
+              <ChevronLeft color={light ? "#101014" : "#ffffff"} size={24} />
             </Pressable>
           ) : null}
           <View style={{ flex: 1 }}>
             {title ? (
-            <Text style={{ fontSize: 20, fontWeight: "700", color: light ? "#141417" : "#ffffff" }}>
+            <Text style={{ fontSize: 20, fontWeight: "700", color: light ? "#101014" : "#ffffff" }}>
               {title}
             </Text>
             ) : null}

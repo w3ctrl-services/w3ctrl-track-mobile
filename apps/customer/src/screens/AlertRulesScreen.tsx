@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Pressable, ScrollView, Switch, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Bell, Check, Mail } from "lucide-react-native";
+import { Bell, Check, Mail, Smartphone } from "lucide-react-native";
 import {
   AppHeader,
   Button,
@@ -28,6 +28,7 @@ export default function AlertRulesScreen() {
   const [type, setType] = useState<string>("geofenceEnter");
   const [web, setWeb] = useState(true);
   const [mail, setMail] = useState(false);
+  const [sms, setSms] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +46,7 @@ export default function AlertRulesScreen() {
       setError(t("Select at least one device."));
       return;
     }
-    const notificators = [web ? "web" : "", mail ? "mail" : ""]
+    const notificators = [web ? "web" : "", mail ? "mail" : "", sms ? "sms" : ""]
       .filter(Boolean)
       .join(",");
     if (!notificators) {
@@ -182,6 +183,36 @@ export default function AlertRulesScreen() {
               <Switch
                 value={mail}
                 onValueChange={setMail}
+                trackColor={{ true: p.brand, false: p.surface3 }}
+              />
+            </View>
+            <View style={{ height: 1, backgroundColor: p.line, marginVertical: 4 }} />
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+                paddingVertical: 8,
+              }}
+            >
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  backgroundColor: p.brandSoft,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Smartphone size={18} color={p.brandInk} />
+              </View>
+              <Txt variant="body" style={{ flex: 1 }}>
+                {t("SMS")}
+              </Txt>
+              <Switch
+                value={sms}
+                onValueChange={setSms}
                 trackColor={{ true: p.brand, false: p.surface3 }}
               />
             </View>

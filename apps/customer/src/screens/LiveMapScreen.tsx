@@ -23,6 +23,7 @@ import { batteryColor } from "@w3ctrl/theme";
 import { useDevices, usePositionMap } from "../api/hooks";
 import { formatRelative } from "../utils/format";
 import type { TabNav } from "../navigation/types";
+import BrandMark from "../components/BrandMark";
 
 /** Matches the web portal: above 5 km/h counts as moving. */
 const MOVING_KMH = 5;
@@ -37,26 +38,6 @@ function statusTone(status: string): "ok" | "alert" | "neutral" {
   if (status === "online") return "ok";
   if (status === "offline") return "alert";
   return "neutral";
-}
-
-/** Orange W brand mark for the black header. */
-function BrandMark() {
-  return (
-    <View
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: "#ff9900",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Txt style={{ color: "#12100d", fontWeight: "800", fontSize: 22 }}>
-        W
-      </Txt>
-    </View>
-  );
 }
 
 const floatShadow = {
@@ -157,20 +138,16 @@ export default function LiveMapScreen() {
             justifyContent: "space-between",
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-            <BrandMark />
-            <View>
-              <Txt style={{ color: "#ffffff", fontSize: 18, fontWeight: "700" }}>
-                {t("Live map")}
-              </Txt>
-              <Txt style={{ color: "#b9b9c2", fontSize: 11, marginTop: 2 }}>
-                {total} {t("vehicles")} · {t("updated")}{" "}
-                {formatRelative(latestFix, t)}
-              </Txt>
-            </View>
-          </View>
+          <BrandMark />
           <Badge tone="ok" text={t("Live")} />
         </View>
+        <Txt style={{ fontSize: 20, fontWeight: "700", marginTop: 12 }}>
+          {t("Live map")}
+        </Txt>
+        <Txt style={{ color: p.muted, fontSize: 12.5, marginTop: 4 }}>
+          {total} {t("vehicles")} · {t("updated")}{" "}
+          {formatRelative(latestFix, t)}
+        </Txt>
       </AppHeader>
 
       <View style={{ flex: 1 }}>

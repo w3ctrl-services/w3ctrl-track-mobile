@@ -15,6 +15,7 @@ import {
 import { useT } from "@w3ctrl/i18n";
 import { batteryOf, knotsToKmh, type TraccarDevice } from "@w3ctrl/api";
 import { useAuth } from "../auth/AuthContext";
+import BrandMark from "../components/BrandMark";
 import { useDevices, useEvents, usePositionMap, useSummary } from "../api/hooks";
 import { formatKm, formatRelative, startOfDay } from "../utils/format";
 import type { TabNav } from "../navigation/types";
@@ -54,22 +55,23 @@ function PulseDot({ size = 10 }: { size?: number }) {
   );
 }
 
-/** Green live pill for the black header, e.g. "2 moving". */
+/** Green live pill for the light header, e.g. "2 moving". */
 function LivePill({ text }: { text: string }) {
+  const p = useTheme();
   return (
     <View
       style={{
         flexDirection: "row",
         alignItems: "center",
         gap: 6,
-        backgroundColor: "rgba(46, 204, 113, 0.16)",
+        backgroundColor: p.okSoft,
         borderRadius: 999,
         paddingHorizontal: 12,
         paddingVertical: 7,
       }}
     >
       <PulseDot />
-      <Txt variant="small" style={{ color: "#7ddba3", fontWeight: "700" }}>
+      <Txt variant="small" style={{ color: p.ok, fontWeight: "700" }}>
         {text}
       </Txt>
     </View>
@@ -226,7 +228,15 @@ export default function DashboardScreen() {
     (d) => knotsToKmh(posMap.get(d.id)?.speed ?? 0) > MOVING_KMH,
   ).length;
   const firstName = (user?.name ?? "").split(" ")[0];
-  const initial = (firstName || "W").charAt(0).toUpperCase();
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12
+      ? t("Good morning")
+      : hour < 17
+        ? t("Good afternoon")
+        : hour < 21
+          ? t("Good evening")
+          : t("Good night");
   const dateStr = new Date().toLocaleDateString(undefined, {
     weekday: "long",
     day: "numeric",
@@ -248,33 +258,20 @@ export default function DashboardScreen() {
             justifyContent: "space-between",
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-            <View
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: "rgba(255,255,255,0.14)",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Txt style={{ color: "#ffffff", fontSize: 18, fontWeight: "700" }}>
-                {initial}
-              </Txt>
-            </View>
-            <View>
-              <Txt style={{ color: "#ffffff", fontSize: 16, fontWeight: "700" }}>
-                {t("Sat Sri Akal")}
-                {firstName ? `, ${firstName}` : ""}
-              </Txt>
-              <Txt style={{ color: "#b9b9c2", fontSize: 11, marginTop: 2 }}>
-                {dateStr}
-              </Txt>
-            </View>
-          </View>
+          <BrandMark />
           <LivePill text={`${moving} ${t("moving")}`} />
         </View>
+        <Txt style={{ fontSize: 20, fontWeight: "700", marginTop: 12 }}>
+          {greeting}
+          {firstName ? (
+            <Txt style={{ fontSize: 20, fontWeight: "700", color: p.brandInk }}>
+              {`, ${firstName}`}
+            </Txt>
+          ) : null}
+        </Txt>
+        <Txt style={{ color: p.muted, fontSize: 12.5, marginTop: 4 }}>
+          {dateStr} · {moving} {t("vehicles on the move")}
+        </Txt>
       </AppHeader>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>

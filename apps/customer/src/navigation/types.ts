@@ -10,7 +10,7 @@ export type MainTabParamList = {
   Map: undefined;
   Devices: { openAdd?: boolean } | undefined;
   Alerts: { tab?: "feed" | "smart" | "rules" } | undefined;
-  Settings: undefined;
+  More: undefined;
 };
 
 export type RootStackParamList = {
@@ -23,6 +23,16 @@ export type RootStackParamList = {
   AlertRules: undefined;
   Reports: undefined;
   Admin: undefined;
+  Trips: undefined;
+  Fleet: undefined;
+  FleetDrivers: undefined;
+  FleetCalendars: undefined;
+  FleetAttributes: undefined;
+  FleetMaintenance: undefined;
+  FleetCommands: undefined;
+  Insights: undefined;
+  Automation: undefined;
+  Settings: undefined;
 };
 
 /** Navigation for stack-level screens (DeviceDetail, TripReplay, …). */

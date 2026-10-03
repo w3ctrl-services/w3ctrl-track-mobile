@@ -68,7 +68,7 @@ function ScrubBar({
           borderRadius: 9,
           backgroundColor: p.brand,
           borderWidth: 3,
-          borderColor: "#ffffff",
+          borderColor: p.surface,
         }}
       />
     </View>

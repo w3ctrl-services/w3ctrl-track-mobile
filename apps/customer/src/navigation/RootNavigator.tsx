@@ -1,7 +1,7 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Bell, Home, Layers, Map as MapIcon, Settings } from "lucide-react-native";
+import { Bell, Home, Layers, Map as MapIcon, MoreHorizontal } from "lucide-react-native";
 import { LoadingView } from "@w3ctrl/ui";
 import { useT } from "@w3ctrl/i18n";
 import { useAuth } from "../auth/AuthContext";
@@ -19,6 +19,16 @@ import AlertRulesScreen from "../screens/AlertRulesScreen";
 import ReportsScreen from "../screens/ReportsScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import AdminScreen from "../screens/AdminScreen";
+import MoreScreen from "../screens/MoreScreen";
+import TripsScreen from "../screens/TripsScreen";
+import FleetScreen from "../screens/FleetScreen";
+import FleetDriversScreen from "../screens/FleetDriversScreen";
+import FleetCalendarsScreen from "../screens/FleetCalendarsScreen";
+import FleetAttributesScreen from "../screens/FleetAttributesScreen";
+import FleetMaintenanceScreen from "../screens/FleetMaintenanceScreen";
+import FleetCommandsScreen from "../screens/FleetCommandsScreen";
+import InsightsScreen from "../screens/InsightsScreen";
+import AutomationScreen from "../screens/AutomationScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -36,7 +46,7 @@ function MainTabs() {
         headerShown: false,
         tabBarActiveTintColor: "#ff9900",
         tabBarInactiveTintColor: "#8e8e99",
-        tabBarStyle: { backgroundColor: "#101014", borderTopWidth: 0 },
+        tabBarStyle: { backgroundColor: "#ffffff", borderTopColor: "#e9e9ee" },
       }}
     >
       <Tab.Screen
@@ -60,9 +70,9 @@ function MainTabs() {
         options={{ title: t("Alerts"), tabBarIcon: icon(Bell) }}
       />
       <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{ title: t("Settings"), tabBarIcon: icon(Settings) }}
+        name="More"
+        component={MoreScreen}
+        options={{ title: t("More"), tabBarIcon: icon(MoreHorizontal) }}
       />
     </Tab.Navigator>
   );
@@ -91,6 +101,16 @@ export function RootNavigator() {
           <Stack.Screen name="AlertRules" component={AlertRulesScreen} />
           <Stack.Screen name="Reports" component={ReportsScreen} />
           <Stack.Screen name="Admin" component={AdminScreen} />
+          <Stack.Screen name="Trips" component={TripsScreen} />
+          <Stack.Screen name="Fleet" component={FleetScreen} />
+          <Stack.Screen name="FleetDrivers" component={FleetDriversScreen} />
+          <Stack.Screen name="FleetCalendars" component={FleetCalendarsScreen} />
+          <Stack.Screen name="FleetAttributes" component={FleetAttributesScreen} />
+          <Stack.Screen name="FleetMaintenance" component={FleetMaintenanceScreen} />
+          <Stack.Screen name="FleetCommands" component={FleetCommandsScreen} />
+          <Stack.Screen name="Insights" component={InsightsScreen} />
+          <Stack.Screen name="Automation" component={AutomationScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
         </>
       )}
     </Stack.Navigator>

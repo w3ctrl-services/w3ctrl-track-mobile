@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Alert, Pressable, ScrollView, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { ChevronRight, KeyRound, LogOut, ShieldCheck } from "lucide-react-native";
+import { ChevronRight, Key, KeyRound, LogOut, ShieldCheck } from "lucide-react-native";
 import {
   AdSlider,
   AppHeader,
@@ -16,13 +16,14 @@ import {
   Txt,
   useTheme,
 } from "@w3ctrl/ui";
-import { useLang, useT, type Lang } from "@w3ctrl/i18n";
-import { login, TraccarError, type TraccarUser } from "@w3ctrl/api";
+import { useT } from "@w3ctrl/i18n";
+import { login, mintToken, TraccarError, type TraccarUser } from "@w3ctrl/api";
 import { useAuth } from "../auth/AuthContext";
 import { authedFetch } from "../api/client";
 import { generateTotpSecret, useUpdateUser } from "../api/hooks";
 import { formatDate } from "../utils/format";
-import type { TabNav } from "../navigation/types";
+import BrandMark from "../components/BrandMark";
+import type { RootNav } from "../navigation/types";
 
 type Attrs = Record<string, unknown>;
 
@@ -322,6 +323,68 @@ function PasswordBody() {
   );
 }
 
+/* ------------------------------------------------------- API token section */
+
+function ApiTokensBody() {
+  const p = useTheme();
+  const t = useT();
+  const [token, setToken] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function generate() {
+    setBusy(true);
+    setError(null);
+    try {
+      const far = new Date(Date.now() + 10 * 365 * 24 * 3600 * 1000).toISOString();
+      setToken(await mintToken(far));
+    } catch {
+      setError(t("Something went wrong."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <View>
+      <Txt variant="small" color={p.muted} style={{ marginBottom: 12 }}>
+        {t(
+          "Long-lived tokens for scripts and integrations. Anyone with a token can act as you — keep it secret.",
+        )}
+      </Txt>
+      {token ? (
+        <>
+          <Txt
+            variant="mono"
+            selectable
+            style={{
+              backgroundColor: p.surface2,
+              padding: 12,
+              borderRadius: 8,
+              marginBottom: 4,
+            }}
+          >
+            {token}
+          </Txt>
+          <Txt variant="caption" color={p.faint} style={{ marginBottom: 12 }}>
+            {t("Long-press the token to copy it. It won't be shown again.")}
+          </Txt>
+        </>
+      ) : null}
+      {error ? (
+        <Txt variant="small" color={p.alert} style={{ marginBottom: 12 }}>
+          {error}
+        </Txt>
+      ) : null}
+      <Button
+        title={token ? t("Generate a new token") : t("Generate token")}
+        onPress={generate}
+        loading={busy}
+      />
+    </View>
+  );
+}
+
 /* ---------------------------------------------------------- plan section */
 
 type Plan = "basic" | "plus" | "fleet";
@@ -446,11 +509,11 @@ function PlanBody() {
 export default function SettingsScreen() {
   const p = useTheme();
   const t = useT();
-  const { lang, setLang } = useLang();
-  const navigation = useNavigation<TabNav<"Settings">>();
   const { user, logout } = useAuth();
+  const navigation = useNavigation<RootNav>();
   const [totpOpen, setTotpOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
+  const [apiTokenOpen, setApiTokenOpen] = useState(false);
 
   const attrs = attrsOf(user);
   const role = str(attrs.role) ?? "customer";
@@ -467,7 +530,41 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: p.paper }}>
-      <AppHeader title={t("Settings")} subtitle={t("ACCOUNT & PREFERENCES")} />
+      <AppHeader title="" onBack={() => navigation.goBack()}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 12,
+          }}
+        >
+          <BrandMark />
+          <View
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              backgroundColor: p.brandSoft,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Txt
+              variant="small"
+              style={{ color: p.brandInk, fontWeight: "700", fontSize: 15 }}
+            >
+              {(user?.name ?? "?").charAt(0).toUpperCase()}
+            </Txt>
+          </View>
+        </View>
+        <Txt style={{ fontSize: 20, fontWeight: "700", color: p.ink }}>
+          {t("Settings")}
+        </Txt>
+        <Txt variant="caption" color={p.muted} style={{ marginTop: 2 }}>
+          {t("Account & preferences")}
+        </Txt>
+      </AppHeader>
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
@@ -501,20 +598,6 @@ export default function SettingsScreen() {
         </Rise>
 
         <Rise delay={60}>
-          <Kicker>{t("Preferences")}</Kicker>
-          <Card>
-            <Segmented<Lang>
-              options={[
-                { value: "en", label: t("English") },
-                { value: "hi", label: t("Hindi") },
-              ]}
-              value={lang}
-              onChange={setLang}
-            />
-          </Card>
-        </Rise>
-
-        <Rise delay={120}>
           <Kicker>{t("Security")}</Kicker>
           <Card style={{ paddingVertical: 4, paddingHorizontal: 16 }}>
             <Pressable onPress={() => setTotpOpen((v) => !v)}>
@@ -562,6 +645,29 @@ export default function SettingsScreen() {
                 <Divider />
                 <View style={{ paddingVertical: 12 }}>
                   <PasswordBody />
+                </View>
+              </>
+            ) : null}
+            <Divider />
+            <Pressable onPress={() => setApiTokenOpen((v) => !v)}>
+              <Row style={{ alignItems: "center", paddingVertical: 14, gap: 12 }}>
+                <Key color={p.muted} size={20} />
+                <View style={{ flex: 1 }}>
+                  <Txt variant="small" style={{ fontWeight: "600", fontSize: 14 }}>
+                    {t("API tokens")}
+                  </Txt>
+                  <Txt variant="caption" color={p.muted} style={{ marginTop: 2 }}>
+                    {t("For scripts and integrations")}
+                  </Txt>
+                </View>
+                <ChevronRight color={p.muted} size={20} />
+              </Row>
+            </Pressable>
+            {apiTokenOpen ? (
+              <>
+                <Divider />
+                <View style={{ paddingVertical: 12 }}>
+                  <ApiTokensBody />
                 </View>
               </>
             ) : null}

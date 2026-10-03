@@ -2,87 +2,20 @@ import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
-  Text,
   View,
 } from "react-native";
 import { AppHeader, Button, Field, Txt, useTheme } from "@w3ctrl/ui";
-import { useLang, useT, type Lang } from "@w3ctrl/i18n";
+import { useT } from "@w3ctrl/i18n";
 import { TraccarError } from "@w3ctrl/api";
 import { useAuth } from "../auth/AuthContext";
-
-/** Orange W brand mark for the black header. */
-function BrandMark() {
-  return (
-    <View
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: "#ff9900",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Text style={{ color: "#12100d", fontWeight: "800", fontSize: 22 }}>W</Text>
-    </View>
-  );
-}
-
-/**
- * EN/हिं toggle for the login header. Uses the same language-switch logic as
- * the rest of the app (useLang().setLang — persisted by App.tsx).
- */
-function LangToggle() {
-  const { lang, setLang } = useLang();
-  const opts: { value: Lang; label: string }[] = [
-    { value: "en", label: "EN" },
-    { value: "hi", label: "हिं" },
-  ];
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        backgroundColor: "rgba(255,255,255,0.12)",
-        borderRadius: 999,
-        padding: 3,
-      }}
-    >
-      {opts.map((o) => {
-        const active = lang === o.value;
-        return (
-          <Pressable
-            key={o.value}
-            onPress={() => setLang(o.value)}
-            style={{
-              paddingHorizontal: 14,
-              paddingVertical: 6,
-              borderRadius: 999,
-              backgroundColor: active ? "#ffffff" : "transparent",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "700",
-                color: active ? "#101014" : "#b9b9c2",
-              }}
-            >
-              {o.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
+import BrandMark from "../components/BrandMark";
 
 export default function LoginScreen() {
   const p = useTheme();
   const t = useT();
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
+  const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [codeMode, setCodeMode] = useState(false);
@@ -93,7 +26,7 @@ export default function LoginScreen() {
     setBusy(true);
     setError(null);
     try {
-      await login(email, password, withCode);
+      await login(userId, password, withCode);
       // AuthProvider flips state → the navigator switches to Main.
     } catch (e) {
       if (e instanceof TraccarError && e.status === 401) {
@@ -108,7 +41,7 @@ export default function LoginScreen() {
       } else if (e instanceof TraccarError && e.status === 429) {
         setError(t("Too many attempts — please wait a minute and try again."));
       } else {
-        setError(t("Invalid email or password."));
+        setError(t("Invalid user ID or password."));
       }
     } finally {
       setBusy(false);
@@ -118,33 +51,7 @@ export default function LoginScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: p.paper }}>
       <AppHeader title="">
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-            <BrandMark />
-            <View>
-              <Text style={{ color: "#ffffff", fontSize: 18, fontWeight: "700" }}>
-                W3ctrl Track
-              </Text>
-              <Text
-                style={{
-                  color: "#b9b9c2",
-                  fontSize: 11,
-                  letterSpacing: 1.5,
-                  marginTop: 2,
-                }}
-              >
-                GPS VEHICLE SECURITY
-              </Text>
-            </View>
-          </View>
-          <LangToggle />
-        </View>
+        <BrandMark />
       </AppHeader>
 
       <KeyboardAvoidingView
@@ -169,7 +76,7 @@ export default function LoginScreen() {
               {t("Sign in").toUpperCase()}
             </Txt>
             <Txt variant="display" style={{ marginTop: 8, lineHeight: 34 }}>
-              {"नमस्ते,\ntrack your fleet."}
+              {t("Welcome back")}
             </Txt>
             <Txt variant="small" color={p.muted} style={{ marginTop: 8, lineHeight: 20 }}>
               {t(
@@ -181,10 +88,10 @@ export default function LoginScreen() {
           {!codeMode ? (
             <>
               <Field
-                label={t("Phone or email")}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="+91 98765 43210"
+                label={t("User ID")}
+                value={userId}
+                onChangeText={setUserId}
+                placeholder="Your Traccar username"
                 keyboardType="email-address"
               />
               <Field
@@ -203,7 +110,7 @@ export default function LoginScreen() {
                 title={busy ? t("Signing in…") : t("Login")}
                 onPress={() => attempt()}
                 loading={busy}
-                disabled={!email.trim() || !password}
+                disabled={!userId.trim() || !password}
               />
             </>
           ) : (
