@@ -255,6 +255,7 @@ export function AppHeader({
   right,
   children,
   style,
+  tone = "dark",
 }: {
   title: string;
   subtitle?: string;
@@ -262,29 +263,39 @@ export function AppHeader({
   right?: React.ReactNode;
   children?: React.ReactNode;
   style?: ViewStyle;
+  tone?: "dark" | "light";
 }) {
+  const light = tone === "light";
   return (
     <InsetSafeAreaView
       edges={["top"]}
-      style={[{ backgroundColor: "#101014" }, style]}
+      style={[
+        {
+          backgroundColor: light ? "#ffffff" : "#101014",
+          ...(light
+            ? { borderBottomWidth: 1, borderBottomColor: "#e8e8ed" }
+            : {}),
+        },
+        style,
+      ]}
     >
       <View style={{ paddingHorizontal: 18, paddingTop: 10, paddingBottom: 16 }}>
         {title || onBack || right ? (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           {onBack ? (
             <Pressable onPress={onBack} hitSlop={8} style={{ marginLeft: -6 }}>
-              <ChevronLeft color="#ffffff" size={24} />
+              <ChevronLeft color={light ? "#141417" : "#ffffff"} size={24} />
             </Pressable>
           ) : null}
           <View style={{ flex: 1 }}>
             {title ? (
-            <Text style={{ fontSize: 20, fontWeight: "700", color: "#ffffff" }}>
+            <Text style={{ fontSize: 20, fontWeight: "700", color: light ? "#141417" : "#ffffff" }}>
               {title}
             </Text>
             ) : null}
             {subtitle ? (
               <Text
-                style={{ fontSize: 12.5, color: "#b9b9c2", marginTop: 2 }}
+                style={{ fontSize: 12.5, color: light ? "#71717b" : "#b9b9c2", marginTop: 2 }}
               >
                 {subtitle}
               </Text>
@@ -301,7 +312,15 @@ export function AppHeader({
 
 /* ------------------------------------------------------- ad slider */
 
-const PROMOS: { title: string; body: string; cta: string; from: string; to: string }[] = [
+export interface Promo {
+  title: string;
+  body: string;
+  cta: string;
+  from: string;
+  to: string;
+}
+
+const PROMOS: Promo[] = [
   {
     title: "Go Plus",
     body: "Engine cut-off, email alerts & priority support.",
@@ -325,14 +344,14 @@ const PROMOS: { title: string; body: string; cta: string; from: string; to: stri
   },
 ];
 
-/** Auto-rotating promo carousel: 3 gradient slides, 4s interval, dot indicators. */
-export function AdSlider({ style }: { style?: ViewStyle }) {
+/** Auto-rotating promo carousel: gradient slides, 4s interval, dot indicators. */
+export function AdSlider({ style, promos = PROMOS }: { style?: ViewStyle; promos?: Promo[] }) {
   const [idx, setIdx] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % PROMOS.length), 4000);
+    const t = setInterval(() => setIdx((i) => (i + 1) % promos.length), 4000);
     return () => clearInterval(t);
-  }, []);
-  const slide = PROMOS[idx];
+  }, [promos.length]);
+  const slide = promos[idx];
   return (
     <View style={style}>
       <View
@@ -392,7 +411,7 @@ export function AdSlider({ style }: { style?: ViewStyle }) {
           marginTop: 10,
         }}
       >
-        {PROMOS.map((_, i) => (
+        {promos.map((_, i) => (
           <View
             key={i}
             style={{

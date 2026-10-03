@@ -13,6 +13,11 @@ const KEYS = {
   pin: "trk_pin",
   interval: "trk_interval",
   done: "trk_onboarding_done",
+  childName: "trk_child_name",
+  contact1Name: "trk_contact1_name",
+  contact1Phone: "trk_contact1_phone",
+  contact2Name: "trk_contact2_name",
+  contact2Phone: "trk_contact2_phone",
 } as const;
 
 export const DEFAULT_SERVER = "https://gpstracker.w3ctrl.com";
@@ -24,16 +29,27 @@ export interface Config {
   pin: string;
   intervalSec: number;
   done: boolean;
+  childName: string;
+  contact1Name: string;
+  contact1Phone: string;
+  contact2Name: string;
+  contact2Phone: string;
 }
 
 export async function loadConfig(): Promise<Config> {
-  const [deviceId, server, pin, interval, done] = await Promise.all([
-    SecureStore.getItemAsync(KEYS.deviceId),
-    SecureStore.getItemAsync(KEYS.server),
-    SecureStore.getItemAsync(KEYS.pin),
-    SecureStore.getItemAsync(KEYS.interval),
-    SecureStore.getItemAsync(KEYS.done),
-  ]);
+  const [deviceId, server, pin, interval, done, childName, c1n, c1p, c2n, c2p] =
+    await Promise.all([
+      SecureStore.getItemAsync(KEYS.deviceId),
+      SecureStore.getItemAsync(KEYS.server),
+      SecureStore.getItemAsync(KEYS.pin),
+      SecureStore.getItemAsync(KEYS.interval),
+      SecureStore.getItemAsync(KEYS.done),
+      SecureStore.getItemAsync(KEYS.childName),
+      SecureStore.getItemAsync(KEYS.contact1Name),
+      SecureStore.getItemAsync(KEYS.contact1Phone),
+      SecureStore.getItemAsync(KEYS.contact2Name),
+      SecureStore.getItemAsync(KEYS.contact2Phone),
+    ]);
   const parsed = interval ? parseInt(interval, 10) : NaN;
   return {
     deviceId: deviceId ?? "",
@@ -42,6 +58,11 @@ export async function loadConfig(): Promise<Config> {
     intervalSec:
       Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_INTERVAL_SEC,
     done: done === "1",
+    childName: childName ?? "",
+    contact1Name: c1n ?? "",
+    contact1Phone: c1p ?? "",
+    contact2Name: c2n ?? "",
+    contact2Phone: c2p ?? "",
   };
 }
 
@@ -63,6 +84,25 @@ export async function saveConfig(partial: Partial<Config>): Promise<void> {
   }
   if (partial.done !== undefined) {
     ops.push(SecureStore.setItemAsync(KEYS.done, partial.done ? "1" : "0"));
+  }
+  if (partial.childName !== undefined) {
+    ops.push(SecureStore.setItemAsync(KEYS.childName, partial.childName));
+  }
+  if (partial.contact1Name !== undefined) {
+    ops.push(SecureStore.setItemAsync(KEYS.contact1Name, partial.contact1Name));
+  }
+  if (partial.contact1Phone !== undefined) {
+    ops.push(
+      SecureStore.setItemAsync(KEYS.contact1Phone, partial.contact1Phone),
+    );
+  }
+  if (partial.contact2Name !== undefined) {
+    ops.push(SecureStore.setItemAsync(KEYS.contact2Name, partial.contact2Name));
+  }
+  if (partial.contact2Phone !== undefined) {
+    ops.push(
+      SecureStore.setItemAsync(KEYS.contact2Phone, partial.contact2Phone),
+    );
   }
   await Promise.all(ops);
 }

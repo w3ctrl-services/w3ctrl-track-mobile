@@ -35,6 +35,8 @@ export interface LastReport {
   at: number;
   accuracy: number | null;
   battery: number | null;
+  lat: number | null;
+  lon: number | null;
 }
 
 interface BatteryInfo {
@@ -140,7 +142,12 @@ function buildUrl(server: string, deviceId: string, r: PositionReport): string {
 /** POST-equivalent: GET the report, persist the last-report receipt. */
 async function deliver(
   url: string,
-  query: { accuracy?: number | null; speed?: number | null },
+  query: {
+    accuracy?: number | null;
+    speed?: number | null;
+    lat: number;
+    lon: number;
+  },
   battery: BatteryInfo,
 ): Promise<void> {
   const q = new URLSearchParams();
@@ -163,10 +170,39 @@ async function deliver(
     at: Date.now(),
     accuracy: query.accuracy ?? null,
     battery: battery.level,
+    lat: query.lat,
+    lon: query.lon,
   };
   await AsyncStorage.setItem(LAST_REPORT_KEY, JSON.stringify(report)).catch(
     () => {},
   );
+  await bumpReportsToday().catch(() => {});
+}
+
+function reportsTodayKey(d = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `trk_reports_${y}${m}${day}`;
+}
+
+async function bumpReportsToday(): Promise<void> {
+  const key = reportsTodayKey();
+  const raw = await AsyncStorage.getItem(key).catch(() => null);
+  const n = raw ? parseInt(raw, 10) : 0;
+  await AsyncStorage.setItem(
+    key,
+    String((Number.isFinite(n) ? n : 0) + 1),
+  ).catch(() => {});
+}
+
+/** How many position reports were successfully sent today (local day). */
+export async function readReportsToday(): Promise<number> {
+  const raw = await AsyncStorage.getItem(reportsTodayKey()).catch(
+    () => null,
+  );
+  const n = raw ? parseInt(raw, 10) : 0;
+  return Number.isFinite(n) ? n : 0;
 }
 
 /* ------------------------------------------------------------------ API */
@@ -181,7 +217,11 @@ export async function reportToServer(r: PositionReport): Promise<void> {
   if (!cfg.deviceId.trim()) throw new Error(K.noDevice);
   const battery = await readBattery();
   const url = buildUrl(cfg.server || DEFAULT_SERVER, cfg.deviceId.trim(), r);
-  await deliver(url, r, battery);
+  await deliver(
+    url,
+    { accuracy: r.accuracy, speed: r.speed, lat: r.lat, lon: r.lon },
+    battery,
+  );
 }
 
 /**
@@ -206,7 +246,12 @@ export async function sendTestReport(
   });
   await deliver(
     url,
-    { accuracy: pos.coords.accuracy, speed: pos.coords.speed },
+    {
+      accuracy: pos.coords.accuracy,
+      speed: pos.coords.speed,
+      lat: pos.coords.latitude,
+      lon: pos.coords.longitude,
+    },
     battery,
   );
 }
@@ -285,6 +330,8 @@ export async function readLastReport(): Promise<LastReport | null> {
       at: p.at,
       accuracy: typeof p.accuracy === "number" ? p.accuracy : null,
       battery: typeof p.battery === "number" ? p.battery : null,
+      lat: typeof p.lat === "number" ? p.lat : null,
+      lon: typeof p.lon === "number" ? p.lon : null,
     };
   } catch {
     return null;
