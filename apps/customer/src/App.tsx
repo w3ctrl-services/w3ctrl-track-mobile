@@ -8,7 +8,9 @@ import { ThemeProvider } from "@w3ctrl/ui";
 import { LanguageProvider, type Lang } from "@w3ctrl/i18n";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { RootNavigator } from "./navigation/RootNavigator";
+import { navigationRef } from "./navigation/navRef";
 import { useSmartAlerts } from "./hooks/useSmartAlerts";
+import { usePushNotifications } from "./push/usePushNotifications";
 import { registerSmartAlertTask } from "./smart-alert-task";
 
 const LANG_KEY = "w3ctrl_lang";
@@ -27,6 +29,13 @@ Notifications.setNotificationHandler({
 function SmartAlertEngine() {
   const { user, restoring } = useAuth();
   useSmartAlerts(!restoring && !!user);
+  return null;
+}
+
+/** Registers the FCM push token and wires notification tap deep-links. */
+function PushEngine() {
+  const { user, restoring } = useAuth();
+  usePushNotifications(!restoring && !!user);
   return null;
 }
 
@@ -68,9 +77,10 @@ export default function App() {
       <LanguageProvider initial={lang} onChange={persistLang}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <NavigationContainer>
+            <NavigationContainer ref={navigationRef}>
               <StatusBar style="light" />
               <SmartAlertEngine />
+              <PushEngine />
               <RootNavigator />
             </NavigationContainer>
           </AuthProvider>

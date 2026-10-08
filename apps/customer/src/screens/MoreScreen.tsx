@@ -2,6 +2,7 @@ import React from "react";
 import { Alert, Pressable, ScrollView, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import {
+  BellRing,
   ChevronRight,
   FileText,
   MapPin,
@@ -32,6 +33,7 @@ type TileRoute =
   | "Fleet"
   | "Insights"
   | "Automation"
+  | "Notifications"
   | "Settings"
   | "Admin";
 
@@ -48,6 +50,7 @@ export default function MoreScreen() {
     { route: "Fleet", label: t("Fleet"), icon: <Users size={20} color={p.brandInk} /> },
     { route: "Insights", label: t("AI Insights"), icon: <Sparkles size={20} color={p.brandInk} /> },
     { route: "Automation", label: t("Automation"), icon: <Zap size={20} color={p.brandInk} /> },
+    { route: "Notifications", label: t("Notifications"), icon: <BellRing size={20} color={p.brandInk} /> },
     { route: "Settings", label: t("Settings"), icon: <Settings size={20} color={p.brandInk} /> },
   ];
 

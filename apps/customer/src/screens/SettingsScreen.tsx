@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { ChevronRight, Key, KeyRound, LogOut, ShieldCheck } from "lucide-react-native";
+import { BellRing, ChevronRight, Key, KeyRound, LogOut, ShieldCheck } from "lucide-react-native";
 import {
   AdSlider,
   AppHeader,
@@ -24,8 +24,22 @@ import { generateTotpSecret, useUpdateUser } from "../api/hooks";
 import { formatDate } from "../utils/format";
 import BrandMark from "../components/BrandMark";
 import type { RootNav } from "../navigation/types";
+import { pushStatus } from "../push/push";
 
 type Attrs = Record<string, unknown>;
+
+/** Small badge showing whether push is ready on this phone. */
+function PushBadge() {
+  const t = useT();
+  const [ready, setReady] = useState<boolean | null>(null);
+  useEffect(() => {
+    pushStatus()
+      .then((s) => setReady(s.permission && s.token))
+      .catch(() => setReady(false));
+  }, []);
+  if (ready === null) return null;
+  return <Badge text={ready ? t("On") : t("Off")} tone={ready ? "ok" : "neutral"} />;
+}
 
 function attrsOf(user: TraccarUser | null): Attrs {
   return (user?.attributes ?? {}) as Attrs;
@@ -671,6 +685,27 @@ export default function SettingsScreen() {
                 </View>
               </>
             ) : null}
+          </Card>
+        </Rise>
+
+        <Rise delay={90}>
+          <Kicker>{t("Notifications")}</Kicker>
+          <Card style={{ paddingVertical: 4, paddingHorizontal: 16 }}>
+            <Pressable onPress={() => navigation.navigate("Notifications")}>
+              <Row style={{ alignItems: "center", paddingVertical: 14, gap: 12 }}>
+                <BellRing color={p.muted} size={20} />
+                <View style={{ flex: 1 }}>
+                  <Txt variant="small" style={{ fontWeight: "600", fontSize: 14 }}>
+                    {t("Push notifications")}
+                  </Txt>
+                  <Txt variant="caption" color={p.muted} style={{ marginTop: 2 }}>
+                    {t("Alert pushes on this phone")}
+                  </Txt>
+                </View>
+                <PushBadge />
+                <ChevronRight color={p.muted} size={20} />
+              </Row>
+            </Pressable>
           </Card>
         </Rise>
 

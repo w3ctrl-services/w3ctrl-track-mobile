@@ -29,6 +29,7 @@ import FleetMaintenanceScreen from "../screens/FleetMaintenanceScreen";
 import FleetCommandsScreen from "../screens/FleetCommandsScreen";
 import InsightsScreen from "../screens/InsightsScreen";
 import AutomationScreen from "../screens/AutomationScreen";
+import NotificationsScreen from "../screens/NotificationsScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -110,6 +111,7 @@ export function RootNavigator() {
           <Stack.Screen name="FleetCommands" component={FleetCommandsScreen} />
           <Stack.Screen name="Insights" component={InsightsScreen} />
           <Stack.Screen name="Automation" component={AutomationScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
         </>
       )}

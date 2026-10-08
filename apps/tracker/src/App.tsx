@@ -6,6 +6,7 @@
  */
 import React, { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Notifications from "expo-notifications";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -21,11 +22,42 @@ import QrScanScreen from "./screens/QrScanScreen";
 import HomeScreen from "./screens/HomeScreen";
 import SosScreen from "./screens/SosScreen";
 import SettingsScreen from "./screens/SettingsScreen";
+import NotificationsScreen from "./screens/NotificationsScreen";
+import { ensurePushToken } from "./push/push";
+import { inboxAdd } from "./push/notification-store";
+
+// Foreground pushes show as banners while the app is open.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+/** Acquire the FCM token + archive received pushes into the inbox. */
+function PushEngine() {
+  useEffect(() => {
+    void ensurePushToken();
+    const recv = Notifications.addNotificationReceivedListener((n) => {
+      void inboxAdd({
+        title: n.request.content.title ?? "W3ctrl Tracker",
+        body: n.request.content.body ?? "",
+      });
+    });
+    return () => {
+      recv.remove();
+    };
+  }, []);
+  return null;
+}
 
 export type RootStackParamList = {
   Setup: { scanned?: { server: string; deviceId: string } } | undefined;
   QrScan: undefined;
   Main: undefined;
+  Notifications: undefined;
 };
 
 export type TabParamList = {
@@ -113,6 +145,7 @@ export default function App() {
       >
         <StatusBar style="dark" />
         <NavigationContainer>
+          <PushEngine />
           <Stack.Navigator
             initialRouteName={boot.route}
             screenOptions={{ headerShown: false }}
@@ -120,6 +153,7 @@ export default function App() {
             <Stack.Screen name="Setup" component={SetupScreen} />
             <Stack.Screen name="QrScan" component={QrScanScreen} />
             <Stack.Screen name="Main" component={MainTabs} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </LanguageProvider>

@@ -33,6 +33,7 @@ export type RootStackParamList = {
   Insights: undefined;
   Automation: undefined;
   Settings: undefined;
+  Notifications: undefined;
 };
 
 /** Navigation for stack-level screens (DeviceDetail, TripReplay, …). */

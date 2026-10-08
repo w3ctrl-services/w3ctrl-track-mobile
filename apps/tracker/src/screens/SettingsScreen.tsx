@@ -17,11 +17,27 @@ import type { CompositeScreenProps } from "@react-navigation/native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { CommonActions } from "@react-navigation/native";
-import { Delete, Lock, ShieldCheck } from "lucide-react-native";
+import { BellRing, Delete, Lock, ShieldCheck } from "lucide-react-native";
 import { Badge, Button, Card, Field, Rise, Segmented, Txt } from "@w3ctrl/ui";
 import { useT } from "@w3ctrl/i18n";
 import { TitleHeader } from "../components/Header";
 import type { RootStackParamList, TabParamList } from "../App";
+import { pushStatus } from "../push/push";
+
+/** Small badge showing whether push is ready on this phone. */
+function PushBadge() {
+  const t = useT();
+  const [ready, setReady] = useState<boolean | null>(null);
+  useEffect(() => {
+    pushStatus()
+      .then((s) => setReady(s.permission && s.token))
+      .catch(() => setReady(false));
+  }, []);
+  if (ready === null) return null;
+  return (
+    <Badge text={ready ? t("On") : t("Off")} tone={ready ? "ok" : "neutral"} />
+  );
+}
 import {
   checkPermissions,
   clearLastReport,
@@ -469,6 +485,25 @@ export default function SettingsScreen({ navigation }: Props) {
                 sub={t("Needs the parent PIN to remove")}
                 right={<Badge text={t("On")} tone="ok" />}
               />
+            </Card>
+          </Rise>
+
+          {/* push notifications */}
+          <Rise delay={40}>
+            <Card
+              onPress={() => navigation.navigate("Notifications")}
+              style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+            >
+              <BellRing size={20} color="#bb332a" />
+              <View style={{ flex: 1 }}>
+                <Txt variant="body" style={{ fontWeight: "700" }}>
+                  {t("Notifications")}
+                </Txt>
+                <Txt variant="small" color="#71717B" style={{ marginTop: 2 }}>
+                  {t("Push inbox for this phone")}
+                </Txt>
+              </View>
+              <PushBadge />
             </Card>
           </Rise>
 
