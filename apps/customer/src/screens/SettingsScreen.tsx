@@ -57,7 +57,7 @@ function planLabel(plan: string, t: (k: string) => string): string {
 
 function planPrice(plan: string): string {
   if (plan === "plus") return "₹499 / year";
-  if (plan === "fleet") return "₹349 / device / year";
+  if (plan === "fleet") return "₹149 / device / year";
   return "₹299 / year";
 }
 
